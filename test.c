@@ -1,6 +1,7 @@
 #include    <stdio.h>
 
 #include    "include/connect_manage.h"
+#include    "include/dispatch.h"
 #include    "include/error.h"
 #include    "include/feature.h"
 #include    "debug.h"
@@ -13,10 +14,12 @@ main(void){
     test_fnet_connect();
     test_fnet_config();
     test_fnet_restore();
+    test_fnet_dispatch();
 }
 
 void init_all(){
     init_connect_manage();
+    init_receive_feature_service();
 }
 
 void
@@ -33,8 +36,8 @@ test_fnet_connect(){
 void
 test_fnet_config(){
     struct cfg_feature_set cfs;
-    unsigned char fs[10] = {1, 2, 5, 41, 36, 25, 12, 11, 22, 3};
-    cfs.no_ft = 10;
+    unsigned char fs[4] = {1, 2, 42, 3};
+    cfs.no_ft = 4;
     
     for(int i=0; i<10; i++){
         cfs.features[i] = fs[i];
@@ -48,6 +51,7 @@ test_fnet_config(){
         printf("configure to server fail\n");
     }
 }
+
 void
 test_fnet_restore(){
     printf("testing resotre to server...\n");
@@ -57,4 +61,14 @@ test_fnet_restore(){
     else{
         printf("restore to server fail\n");
     }
+}
+
+void 
+test_fnet_dispatch(){
+    printf("testing dispatch...\n");
+    if(dispatch() <  0){
+        printf("dispatch operation failed\n");
+    }
+    
+    
 }

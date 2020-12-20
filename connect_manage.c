@@ -225,6 +225,7 @@ restore_server(){
     return -1;
 
 }
+
 static int 
 cm_send_recv(char * sbuf, int slen, char *rbuf, int rsize, int *rlen){
 
@@ -258,6 +259,7 @@ resend:
     no_try = 0;
     return 0;
 }
+
 static void
 cm_sig_alrm(int signo){
     return ;
