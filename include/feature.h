@@ -53,6 +53,20 @@
 
 struct cfg_feature_set{
     int no_ft;
-    unsigned char features[NO_FEATURE + 1]; 
+    unsigned char f_features[NO_FEATURE + 1]; 
 };
+
+
+struct feature{
+    unsigned char ft_code;
+    unsigned short ft_len; // length of feature string
+    char * ft_val;  // feature string;
+};
+
+struct feature_set{
+    int no_ft;
+    unsigned char f_feature[NO_FEATURE + 1];
+    struct feature *features[NO_FEATURE + 1];
+};
+
 #endif

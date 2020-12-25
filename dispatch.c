@@ -7,6 +7,7 @@
 #include    <string.h>
 #include    <errno.h>
 #include    <stdio.h>
+#include    <stdlib.h>
 
 #include    "include/dispatch.h"
 #include    "include/proto.h"
@@ -16,6 +17,8 @@ extern int cmsockfd;
 int flag_init_rfs;
 int rfsockfd;
 struct sockaddr server_addr_d;
+
+
 
 int 
 init_receive_feature_service(){
@@ -37,10 +40,9 @@ init_receive_feature_service(){
 }
 
 int 
-dispatch(){
+dispatch(feature_handler fhandler, unsigned char * fhdl_args){
     if(flag_init_rfs == 0){
-        err_msg("Receive feature service is not initialized");
-        return -1;
+        init_receive_feature_service();
     }
 
     char ft_msg[MAX_UDP_MSG];
@@ -71,14 +73,23 @@ dispatch(){
         }
         msg_offset = 4;
         do{
-            focode = *(ft_msg + msg_offset);
-            folen = *(short *)(ft_msg+msg_offset + 1);
+            struct feature *ft = (struct feature*)malloc(sizeof (struct feature)); 
+            if(ft == NULL){
+                err_msg("malloc error");
+                return -1;
+            }
+            ft->ft_code= *(ft_msg + msg_offset);
+            ft->ft_len = *(short *)(ft_msg+msg_offset + 1);
             char * val = (char *)malloc(folen + 1);
             memcpy(val, ft_msg + msg_offset + 3, folen);
             val[folen] = '\0';
-            printf("code:%d,value:%d", focode, val);
-            free(val);
+            printf("%d:%s\n", focode, val);
+            ft->ft_val = val;
             msg_offset += 3 + folen;
+            if(fhandler != NULL){
+                f_handler(fhdl_args, ft);
+            }
+            
         }while(msg_offset < proto_len);
     }
 }

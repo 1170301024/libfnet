@@ -9,7 +9,7 @@
 
 
 
-#include    "include/libfnet.h"
+#include    "include/debug.h"
 #include    "include/feature.h"
 #include    "include/connect_manage.h"
 #include    "include/proto.h"
@@ -144,8 +144,8 @@ config_server(struct cfg_feature_set * ft_set){
     no_ft = ft_set->no_ft;
 
     for(int i=0; i < no_ft; i++){
-        if(ft_set->features[i] != 0){  
-            ft_code = ft_set->features[i];
+        if(ft_set->f_features[i] != 0){  
+            ft_code = ft_set->f_features[i];
             ft_flags[ft_code/8] |= ((unsigned char )1 << (unsigned char )(ft_code % 8));  
         }
     }

@@ -1,5 +1,5 @@
-#ifndef _DEBUG_
-#define _DEBUG_
+#ifndef _DEBUG_H_1
+#define _DEBUG_H_1
 
 void init_all();
 void test_fnet_connect();

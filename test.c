@@ -36,11 +36,11 @@ test_fnet_connect(){
 void
 test_fnet_config(){
     struct cfg_feature_set cfs;
-    unsigned char fs[4] = {1, 2, 42, 3};
+    unsigned char fs[4] = {1, 2, 5, 3};
     cfs.no_ft = 4;
     
     for(int i=0; i<10; i++){
-        cfs.features[i] = fs[i];
+        cfs.f_features[i] = fs[i];
     }
 
     printf("testing configure to server...\n");
@@ -69,6 +69,4 @@ test_fnet_dispatch(){
     if(dispatch() <  0){
         printf("dispatch operation failed\n");
     }
-    
-    
 }
