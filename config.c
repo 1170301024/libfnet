@@ -6,12 +6,14 @@
  *
  */
 
-
+#include <stdio.h>
 #include <stdlib.h>       
 #include <limits.h>
 #include <ctype.h> 
-#include "err.h"
+#include "include/error.h"
+#include <stdbool.h>
 
+#include "include/config.h"
 
 /** returns if two string are the same */
 #define match(c, x) (!strncmp(c, x, strlen(x)))
@@ -21,29 +23,29 @@ static int parse_int (unsigned int *x, const char *arg, int num_arg, unsigned in
     const char *c = arg;
 
     if (x == NULL) {
-        return failure;
+        return -1;
     }
 
     if (num_arg == 2) {
         if (arg == NULL) {
-            return failure;
+            return -1;
         }
         while (*c != 0) {
             if (!isdigit(*c)) {
                       printf("error: argument %s must be a number ", arg);
-                      return failure;
+                      return -1;
             }
             c++;
         }
         *x = atoi(arg);
         if (*x < min || *x > max) {
             printf("error: value must be between %d and %d ", min, max);
-            return failure;
+            return -1;
         }
     } else {
-        return failure;
+        return -1;
     }
-    return ok;
+    return 0;
 }
 
 /* parses a boolean value */
@@ -53,19 +55,19 @@ static int parse_bool (bool *x, const char *arg, int num_arg) {
     /* if the number of arguments is one, default turn the option on */
     if (num_arg == 1) {
         *x = 1;
-        return ok;
+        return 0;
     }
 
     /* sanity check the length of the value string */
     if (strlen(arg) > 1) {
         printf("error: value too big, value must be 0 or 1");
-        return failure;
+        return -1;
     }
 
     /* make sure value is a digit */
     if (!isdigit(*arg)) {
         printf("error: non-digit, value must be 0 or 1");
-        return failure;
+        return -1;
     }
 
     /* change the value into a digit */
@@ -77,13 +79,13 @@ static int parse_bool (bool *x, const char *arg, int num_arg) {
     } else {
         *x = 0;
     }
-    return ok;
+    return 0;
 }
 
 /*parses a string values */
 static int parse_string (char **s, char *arg, int num_arg) {
     if (s == NULL || arg == NULL || num_arg != 2) {
-        return failure;
+        return -1;
     }
   
     if (strncmp(arg, NULL_KEYWORD, strlen(NULL_KEYWORD)) == 0) {
@@ -91,27 +93,27 @@ static int parse_string (char **s, char *arg, int num_arg) {
     } else {
         *s = strdup(arg); /* note: must be freed later */
     }
-    return ok;
+    return 0;
 }
 
 /* parses mutliple part string values */
 static int parse_string_multiple (char **s, char *arg, int num_arg,
            unsigned int string_num, unsigned int string_num_max) {
     if (s == NULL) {
-        return failure;
+        return 1;
     }
     if (string_num >= string_num_max) {
-        return failure;
+        return 1;
     }
     return parse_string(&s[string_num], arg, num_arg);
 }
 
 /* see if parse checks are ok */
 #define parse_check(s) if ((s)) {                   \
-   fprintf(info, "error in command %s\n", command); \
-   return failure;                                  \
+   fprintf(stdout, "error in command %s\n", command); \
+   return 1;                                  \
   } else {                                          \
-  return ok;                                        \
+  return 0;                                        \
 }
 
 
@@ -162,7 +164,7 @@ static int config_parse_command (configuration_t *config,
         parse_check(parse_string(&config->params_file, arg, num));
 
     } else if (match(command, "label")) {
-        parse_check(parse_string_multiple(config->subnet, arg, num, config->num_subnets++, MAX_NUM_FLAGS));
+        //parse_check(parse_string_multiple(config->subnet, arg, num, config->num_subnets++, MAX_NUM_FLAGS));
 
     } else if (match(command, "retain")) {
         parse_check(parse_bool(&config->retain_local, arg, num));
@@ -186,7 +188,7 @@ static int config_parse_command (configuration_t *config,
         parse_check(parse_bool(&config->report_entropy, arg, num));
 
     } else if (match(command, "hd")) {
-        parse_check(parse_int((unsigned int*)&config->report_hd, arg, num, 0, HDR_DSC_LEN));
+        //parse_check(parse_int((unsigned int*)&config->report_hd, arg, num, 0, HDR_DSC_LEN));
 
     } else if (match(command, "classify")) {
         parse_check(parse_bool(&config->include_classifier, arg, num));
@@ -205,13 +207,13 @@ static int config_parse_command (configuration_t *config,
 #endif
 
     } else if (match(command, "num_pkts")) {
-        parse_check(parse_int((unsigned int*)&config->num_pkts, arg, num, 0, MAX_NUM_PKT_LEN));
+        //parse_check(parse_int((unsigned int*)&config->num_pkts, arg, num, 0, MAX_NUM_PKT_LEN));
 
     } else if (match(command, "count")) {
         parse_check(parse_int(&config->max_records, arg, num, 1, INT_MAX));
 
     } else if (match(command, "idp")) {
-        parse_check(parse_int((unsigned int*)&config->idp, arg, num, 0, MAX_IDP));
+        //parse_check(parse_int((unsigned int*)&config->idp, arg, num, 0, MAX_IDP));
 
     } else if (match(command, "nfv9_port")) {
         parse_check(parse_int((unsigned int*)&config->nfv9_capture_port, arg, num, 0, 0xffff));
@@ -265,7 +267,7 @@ static int config_parse_command (configuration_t *config,
 
     config_all_features_bool(feature_list);
 
-    return failure;
+    return 1;
 }
 
 /**
@@ -278,12 +280,12 @@ static int config_parse_command (configuration_t *config,
  * \return none
  */
 void config_set_defaults (configuration_t *config) {
-    config->verbosity = 4;
-    config->show_config = 0;
-    config->show_interfaces = 0;
-    config->num_pkts = DEFAULT_NUM_PKT_LEN;
-    config->num_threads = 1;
-    config->updater_on = 0;
+    // config->verbosity = 4;
+    // config->show_config = 0;
+    // config->show_interfaces = 0;
+    // config->num_pkts = DEFAULT_NUM_PKT_LEN;
+    // config->num_threads = 1;
+    // config->updater_on = 0;
 }
 
 #define MAX_FILEPATH 128
@@ -322,7 +324,7 @@ static FILE* open_config_file(const char *filename) {
 #endif
 
     if (!fp) {
-        joy_log_err("could not open %s", filename);
+        err_msg("could not open %s", filename);
     }
 
     return fp;
