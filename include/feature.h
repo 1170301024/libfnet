@@ -69,4 +69,11 @@ struct feature_set{
     struct feature *features[NO_FEATURE + 1];
 };
 
+#define empty_feature_set(fsp)   do{      \
+                                    for(int i=0; i<=NO_FEATURE; i++){ \
+                                        fsp->f_feature[i] = 0; \
+                                        fsp->features[i] = NULL; \
+                                    }   \
+                                    fsp->no_ft = 0;   \
+                                }while(0);
 #endif

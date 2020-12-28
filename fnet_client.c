@@ -38,6 +38,6 @@ static int usage (char *s){
 }
 
 int main(void){
-
+    
 }
 

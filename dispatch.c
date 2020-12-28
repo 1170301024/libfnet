@@ -47,6 +47,7 @@ dispatch(feature_handler fhandler, unsigned char * fhdl_args){
 
     char ft_msg[MAX_UDP_MSG];
     int n, addr_len;
+    struct feature_set *fts;
     
     for( ; ; ){
         n = recvfrom(rfsockfd, ft_msg, MAX_UDP_MSG, 0, &server_addr_d, &addr_len);
@@ -72,6 +73,13 @@ dispatch(feature_handler fhandler, unsigned char * fhdl_args){
             continue;
         }
         msg_offset = 4;
+
+        fts = (struct feature_set*)malloc(sizeof (struct feature_set));
+        fts->no_ft = 0;
+
+        empty_feature_set(fts);
+        
+
         do{
             struct feature *ft = (struct feature*)malloc(sizeof (struct feature)); 
             if(ft == NULL){
@@ -80,16 +88,19 @@ dispatch(feature_handler fhandler, unsigned char * fhdl_args){
             }
             ft->ft_code= *(ft_msg + msg_offset);
             ft->ft_len = *(short *)(ft_msg+msg_offset + 1);
-            char * val = (char *)malloc(folen + 1);
-            memcpy(val, ft_msg + msg_offset + 3, folen);
-            val[folen] = '\0';
-            printf("%d:%s\n", focode, val);
+            char * val = (char *)malloc(ft->ft_len + 1);
+            memcpy(val, ft_msg + msg_offset + 3, ft->ft_len);
+            val[ft->ft_len] = '\0';
+            printf("%d:%s\n", ft->ft_code, val);
             ft->ft_val = val;
-            msg_offset += 3 + folen;
-            if(fhandler != NULL){
-                f_handler(fhdl_args, ft);
-            }
+            msg_offset += 3 + ft->ft_len;
+            fts->f_feature[ft->ft_code] = 1;
+            fts->features[ft->ft_code] = ft;
+            fts->no_ft++;
             
         }while(msg_offset < proto_len);
+        if(fhandler != NULL){
+            fhandler(fhdl_args, fts);
+        }
     }
 }

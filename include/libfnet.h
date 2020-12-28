@@ -2,6 +2,7 @@
 #define _LIBFNET_H_
 
 #include    "feature.h"
+#include    "dispatch.h"
 
 int fnet_connect();
 

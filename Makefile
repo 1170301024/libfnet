@@ -2,13 +2,13 @@
 INCLDDIR = include
 CFLAGS = -I $(INCLDDIR)/*.h
 
-OBJS = test.o connect_manage.o dispatch.o error.o 
+OBJS = lab_task.o connect_manage.o dispatch.o error.o 
 
-test: $(OBJS)
-	cc $(OBJS) -o test
+lab_task: $(OBJS)
+	cc $(OBJS) -o lab_task
 	
-test.o:
-	cc -c $(CFLAGS) test.c
+lab_task.o:
+	cc -c $(CFLAGS) lab_task.c
 
 connect_manage.o:
 	cc -c $(CFLAGS) connect_manage.c
@@ -22,4 +22,4 @@ dispatch.o:
 
 .PHONY: clean
 clean:
-	rm *.o test include/*.gch
+	rm *.o lab_task include/*.gch

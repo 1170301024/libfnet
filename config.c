@@ -340,7 +340,7 @@ static FILE* open_config_file(const char *filename) {
  * \return ok
  * \return failure
  */
-int config_set_from_file (configuration_t *config, const char *fname) {
+/*int config_set_from_file (configuration_t *config, const char *fname) {
     FILE *f;
     char *line = NULL;
     size_t ignore;
@@ -356,7 +356,7 @@ int config_set_from_file (configuration_t *config, const char *fname) {
 
     /*
      * Setting the default configuration values!
-     */
+     *
     config_set_defaults(config);
 
     while ((len = getline(&line, &ignore, f)) != -1) {
@@ -370,7 +370,7 @@ int config_set_from_file (configuration_t *config, const char *fname) {
             return failure;
         }
 
-        /* ignore blank lines and comments */
+        * ignore blank lines and comments /
         c = line;
         while (isblank(*c)) {
             c++;
@@ -378,11 +378,11 @@ int config_set_from_file (configuration_t *config, const char *fname) {
         if (*c == '#' || *c == '\n') {
             ;
         } else {
-            /*
+            *
              * a valid command line consists of a LHS, possibly followed by
              * an "=" and a RHS.  The newline and # (start of comment) is
              * not part of the RHS.
-             */
+             *
             num = sscanf(line, "%[^=] = %[^\n#]", lhs, rhs);
             if (num == 2 || num == 1) {
                        // printf("%s = %s ### %d ### %s", lhs, rhs, num, line);
@@ -405,9 +405,9 @@ int config_set_from_file (configuration_t *config, const char *fname) {
     }
     free(line);
     fclose(f);
-    return ok;
+    return 0;
 }
-
+*/
 /**
  * \fn int config_set_from_argv (configuration_t *config, char *argv[], int argc)
  *
@@ -486,7 +486,7 @@ int config_set_from_argv (configuration_t *config, char *argv[], int argc) {
  * \return none
  */
 void config_print (FILE *f, const configuration_t *c) {
-    unsigned int i;
+   /* unsigned int i;
 #ifdef PACKAGE_VERSION
     fprintf(f, "joy version = %s\n", PACKAGE_VERSION);
 #else
@@ -525,7 +525,7 @@ void config_print (FILE *f, const configuration_t *c) {
     fprintf(f, "threads = %u\n", c->num_threads);
     fprintf(f, "updater = %u\n", c->updater_on);
   
-    /* note: anon_print_subnets is silent when no subnets are configured */
+    /* note: anon_print_subnets is silent when no subnets are configured 
     anon_print_subnets(f);
 }
 
@@ -534,7 +534,7 @@ void config_print (FILE *f, const configuration_t *c) {
  * \param f file to print configuration to
  * \param c pointer to the configuration structure
  * \return none
- */
+ *
 void config_print_json (zfile f, const configuration_t *c) {
     unsigned int i;
 
@@ -572,6 +572,6 @@ void config_print_json (zfile f, const configuration_t *c) {
 
     config_print_json_all_features_bool(feature_list);
 
-    zprintf(f, "\"end-config\":1}\n");  
+    zprintf(f, "\"end-config\":1}\n");  */
 }
 

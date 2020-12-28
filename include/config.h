@@ -11,6 +11,7 @@ typedef struct configuration{
     bool ip;
     bool tcp;
     bool dns;
+    
 
     char *outputdir;
     char *filename;
