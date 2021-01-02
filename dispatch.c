@@ -14,7 +14,8 @@
 #include    "include/error.h"
 
 extern int cmsockfd;
-int flag_init_rfs;
+int flag_init_rfs = 0;
+extern int flag_init_cm;
 int rfsockfd;
 struct sockaddr server_addr_d;
 
@@ -22,18 +23,22 @@ struct sockaddr server_addr_d;
 
 int 
 init_receive_feature_service(){
-    struct sockaddr_in *sd_addr = (struct sockaddr_in*)&server_addr_d;
+    //struct sockaddr_in *sd_addr = (struct sockaddr_in*)&server_addr_d;
+    if(flag_init_cm){
+        rfsockfd = cmsockfd;
+    }
+    else{
+        return -1;
+    }
+    
 
-    rfsockfd = cmsockfd;
-
-    memset(sd_addr, 0, sizeof (*sd_addr));
+    /*memset(sd_addr, 0, sizeof (*sd_addr));
     sd_addr->sin_family = AF_INET;
     sd_addr->sin_port = htons(SERVER_FEATURE_DISTRIBUTE_PORT);
     if(inet_pton(AF_INET, SERVER_FEATURE_DISTRIBUTE_IPV4, &(sd_addr->sin_addr.s_addr)) < 0){
         err_sys("inet_pton error");
         return -1;
-    }
-
+    }*/
     flag_init_rfs = 1;
     return 0;
 
@@ -46,20 +51,22 @@ dispatch(feature_handler fhandler, unsigned char * fhdl_args){
     }
 
     char ft_msg[MAX_UDP_MSG];
-    int n, addr_len;
+    int n;
+    socklen_t addr_len;
     struct feature_set *fts;
     
     for( ; ; ){
+        printf("%d", rfsockfd);
         n = recvfrom(rfsockfd, ft_msg, MAX_UDP_MSG, 0, &server_addr_d, &addr_len);
+
         if(n < 0){
-            err_sys(recvfrom);
+            err_sys("recvfrom error");
             continue;
         }
         printf("Receive a packet from %s:%d\n", inet_ntoa(((struct sockaddr_in*)&server_addr_d)->sin_addr), ntohs(((struct sockaddr_in*)&server_addr_d)->sin_port));
 
         // parse the packet as a feature packet
-        short proto_len, folen;
-        char focode;
+        short proto_len;
         int msg_offset;
 
         if(ft_msg[0] != FEATURE || ft_msg[1] != GENERAL_CODE){
@@ -91,7 +98,7 @@ dispatch(feature_handler fhandler, unsigned char * fhdl_args){
             char * val = (char *)malloc(ft->ft_len + 1);
             memcpy(val, ft_msg + msg_offset + 3, ft->ft_len);
             val[ft->ft_len] = '\0';
-            printf("%d:%s\n", ft->ft_code, val);
+            // printf("%d:%s\n", ft->ft_code, val);
             ft->ft_val = val;
             msg_offset += 3 + ft->ft_len;
             fts->f_feature[ft->ft_code] = 1;

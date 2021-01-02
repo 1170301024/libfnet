@@ -2,6 +2,7 @@
 #include    "include/connect_manage.h"
 #include    "include/dispatch.h"
 #include    "include/feature.h"
+#include    "include/error.h"
 
 extern int flag_init_cm;
 extern int flag_init_rfs;
@@ -33,16 +34,16 @@ fnet_start(){
     return fnet_restore();
 }
 
-int 
-fnet_pause(){
-    if(!flag_init_cm){
-        if(init_connect_manage() < 0){
-            err_msg("Pause server failed");
-            return -1;
-        }
-    }
-    return pause_server();
-}
+// int 
+// fnet_pause(){
+//     if(!flag_init_cm){
+//         if(init_connect_manage() < 0){
+//             err_msg("Pause server failed");
+//             return -1;
+//         }
+//     }
+//     return pause_server();
+// }
 
 int 
 fnet_restore(){
@@ -56,10 +57,10 @@ fnet_restore(){
 }
 
 int 
-fnet_dispatch(int loop, feature_handler fhdl, unsigned char fhdl_args){
+fnet_dispatch(int loop, feature_handler fhdl, unsigned char *fhdl_args){
     if(!flag_init_rfs){
         if(init_receive_feature_service() < 0){
-            err_msg("recvive feature service initialization failed");
+            err_msg("receive feature service initialization failed");
             return -1;
         }
     }

@@ -8,6 +8,6 @@
 
 typedef void (*feature_handler)(const unsigned char *, struct feature_set*);
 
-int init_receive_feature_service();
+int init_receive_feature_service(void);
 int dispatch(feature_handler fhandler, unsigned char * fhdl_args);
 #endif

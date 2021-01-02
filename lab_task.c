@@ -122,18 +122,18 @@ FILE * file;
 
 // 
 time_t last_handler_time = -1;
-int csv_file_count =1;
+int csv_file_count =101;
 
 int flow_count;
 void handler(const unsigned char* arg, struct feature_set * fts){
     if(last_handler_time == -1 || time(NULL) - last_handler_time > 1){
         char file_path[256];
         last_handler_time = time(NULL);
-        sprintf(file_path, "./result/%d.csv", csv_file_count);
+        sprintf(file_path, "../result/%d.csv", csv_file_count);
         if((file = fopen(file_path, "w+")) == NULL){
             err_quit("canno't open file");
         }
-        sprintf(file_path, "./data/%d/logs/%d.log", csv_file_count, csv_file_count);
+        sprintf(file_path, "../data200/%d/logs/%d.log", csv_file_count, csv_file_count);
         puts(file_path);
         read_logfile(file_path);
         csv_file_count++;
@@ -243,6 +243,7 @@ read_logfile(char *file_path){
                 else if(_flag == 1 && *(line+i) == '_'){
                     *(line+i) = '\0';
                     m_time = atoi(line+i+1);
+                    puts(line);
                     strptime(line, "%Y-%m-%d %H:%M:%S", &tm);
                     printf("mktime:%ld\n", mktime(&tm));
                     _flag = 2;
@@ -260,7 +261,6 @@ read_logfile(char *file_path){
                 }
                 cur_action->start_time = mktime(&tm) * 1000 + (int)(m_time / 1000000);
                 time_f = 1;
-                printf("hello\n");
             }
             else{
                 cur_action->end_time = mktime(&tm) * 1000 + (int)(m_time / 1000000);
@@ -289,12 +289,14 @@ main(void){
     }
     
     struct cfg_feature_set cfs;
+    memset(&cfs, 0x00, sizeof cfs);
+
     unsigned char fs[] = {SA, DA, PR, SP, DP, TIME_START, TIME_END, 
                 PACKETS};
     cfs.no_ft = sizeof fs;
 
     for(int i=0; i<cfs.no_ft; i++){
-        cfs.f_features[i] = fs[i];
+        cfs.f_features[fs[i]] = 1;
     }
 
     if(config_server(&cfs) < 0){

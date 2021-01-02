@@ -10,10 +10,8 @@
 #define SO_SOCKET_TIMEOUT   5
 #define NO_MAX_TRY 3
 
-int init_connect_manage();
-int connect_server();
-int config_server(struct cfg_feature_set * ft_set);
-int restore_server();
-static int cm_send_recv(char * sbuf, int slen, char *rbuf, int rsize, int *rlen);
-static void cm_sig_alrm(int signo);
+int init_connect_manage(void);
+int connect_server(void);
+int config_server(const struct cfg_feature_set * ft_set);
+int restore_server(void);
 #endif

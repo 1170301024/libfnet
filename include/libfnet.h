@@ -4,16 +4,16 @@
 #include    "feature.h"
 #include    "dispatch.h"
 
-int fnet_connect();
+int fnet_connect(void);
 
 int fnet_config(const struct cfg_feature_set * ft_set);
 
-int fnet_start();
+int fnet_start(void);
 
-int fnet_pause();
+int fnet_pause(void);
 
-int fnet_restore();
+int fnet_restore(void);
 
-int fnet_dispatch(int loop, feature_handler, unsigned char hdl_args);
+int fnet_dispatch(int loop, feature_handler, unsigned char *hdl_args);
 
 #endif

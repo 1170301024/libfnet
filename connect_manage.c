@@ -6,6 +6,7 @@
 #include    <stdlib.h>
 #include    <string.h>
 #include    <errno.h>
+#include    <stdio.h>
 
 
 
@@ -22,10 +23,16 @@ int flag_init_cm = 0;
 int cmsockfd;
 struct sockaddr server_addr;
 
+static void
+cm_sig_alrm(int signo){
+    return ;
+}
+
+
 int 
 init_connect_manage(){
     struct sockaddr_in cmaddr, *s_addr = (struct sockaddr_in*)&server_addr;
-    int rc;
+    //int rc;
     struct sigaction act, oact;
 
     
@@ -71,6 +78,41 @@ init_connect_manage(){
     return 0;
 
 } 
+
+static int 
+cm_send_recv(char * sbuf, int slen, char *rbuf, int rsize, int *rlen){
+
+    socklen_t server_addr_len;
+resend:
+    no_try++;
+    if(NO_MAX_TRY < no_try){
+        err_msg("Three attempts failed, check network condition");
+        no_try = 0;
+        return -1;
+    }    
+    if(sendto(cmsockfd, sbuf, slen, 0, &server_addr, sizeof server_addr) == -1){
+        err_sys("sendto error");
+        return -1;
+    }
+#ifdef LIBFNET_DEBUG
+    printf("sent request to server(%d)\n", no_try);
+#endif
+    alarm(SO_SOCKET_TIMEOUT);    
+    if((*rlen = recvfrom(cmsockfd, rbuf, rsize, 0, &server_addr, &server_addr_len)) < 0){
+        if(errno == EINTR){
+            err_msg("socket timeout");
+            goto resend;
+        }
+        else{
+            err_sys("recvfrom error");
+            return -1;
+        }
+    }
+    alarm(0);
+    no_try = 0;
+    return 0;
+}
+
 
 int 
 connect_server(){
@@ -118,7 +160,7 @@ connect_server(){
 }
 
 int 
-config_server(struct cfg_feature_set * ft_set){
+config_server(const struct cfg_feature_set * ft_set){
     if(!flag_init_cm){
         err_msg("Connection management is not initialized");
         return -1;
@@ -143,9 +185,9 @@ config_server(struct cfg_feature_set * ft_set){
     cfg_code = GENERAL_CODE;
     no_ft = ft_set->no_ft;
 
-    for(int i=0; i < no_ft; i++){
-        if(ft_set->f_features[i] != 0){  
-            ft_code = ft_set->f_features[i];
+    for(int i=0; i <= NO_FEATURE; i++){
+        if(ft_set->f_features[i] == 1){  
+            ft_code = i;
             ft_flags[ft_code/8] |= ((unsigned char )1 << (unsigned char )(ft_code % 8));  
         }
     }
@@ -226,41 +268,4 @@ restore_server(){
 
 }
 
-static int 
-cm_send_recv(char * sbuf, int slen, char *rbuf, int rsize, int *rlen){
 
-    int server_addr_len;
-resend:
-    no_try++;
-    if(NO_MAX_TRY < no_try){
-        err_msg("Three attempts failed, check network condition");
-        no_try = 0;
-        return -1;
-    }    
-    if(sendto(cmsockfd, sbuf, slen, 0, &server_addr, sizeof server_addr) == -1){
-        err_sys("sendto error");
-        return -1;
-    }
-#ifdef LIBFNET_DEBUG
-    printf("sent request to server(%d)\n", no_try);
-#endif
-    alarm(SO_SOCKET_TIMEOUT);    
-    if((*rlen = recvfrom(cmsockfd, rbuf, rsize, 0, &server_addr, &server_addr_len)) < 0){
-        if(errno == EINTR){
-            err_msg("socket timeout");
-            goto resend;
-        }
-        else{
-            err_sys("recvfrom error");
-            return -1;
-        }
-    }
-    alarm(0);
-    no_try = 0;
-    return 0;
-}
-
-static void
-cm_sig_alrm(int signo){
-    return ;
-}

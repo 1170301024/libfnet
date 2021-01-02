@@ -10,13 +10,14 @@
 #include <stdlib.h>       
 #include <limits.h>
 #include <ctype.h> 
-#include "include/error.h"
 #include <stdbool.h>
+#include <string.h>
 
+#include "include/error.h"
 #include "include/config.h"
 
 /** returns if two string are the same */
-#define match(c, x) (!strncmp(c, x, strlen(x)))
+#define match(c, x) (strlen(x) == strlen(c) && !strncmp(c, x, strlen(x)))
 
 /* parses an integer value */
 static int parse_int (unsigned int *x, const char *arg, int num_arg, unsigned int min, unsigned int max) {
@@ -136,136 +137,23 @@ static int config_parse_command (configuration_t *config,
      * than the longer one
      */
 
-    if (match(command, "interface")) {
-        parse_check(parse_string(&config->intface, arg, num));
+    if (match(command, "ip")) {
+        parse_check(parse_bool(&config->ip, arg, num));
 
-    } else if (match(command, "promisc")) {
-        parse_check(parse_bool(&config->promisc, arg, num));
+    } else if (match(command, "tcp")) {
+        parse_check(parse_bool(&config->tcp, arg, num));
 
-    } else if (match(command, "output")) {
+    } else if (match(command, "outfile")) {
         parse_check(parse_string(&config->filename, arg, num));
 
     } else if (match(command, "outdir")) {
         parse_check(parse_string(&config->outputdir, arg, num));
 
-    } else if (match(command, "username")) {
-        parse_check(parse_string(&config->username, arg, num));
-
-    } else if (match(command, "log")) {
+    } else if (match(command, "logfile")) {
         parse_check(parse_string(&config->logfile, arg, num));
 
-    } else if (match(command, "upload")) {
-        parse_check(parse_string(&config->upload_servername, arg, num));
-
-    } else if (match(command, "keyfile")) {
-        parse_check(parse_string(&config->upload_key, arg, num));
-
-    } else if (match(command, "model")) {
-        parse_check(parse_string(&config->params_file, arg, num));
-
-    } else if (match(command, "label")) {
-        //parse_check(parse_string_multiple(config->subnet, arg, num, config->num_subnets++, MAX_NUM_FLAGS));
-
-    } else if (match(command, "retain")) {
-        parse_check(parse_bool(&config->retain_local, arg, num));
-
-    } else if (match(command, "zeros")) {
-        parse_check(parse_bool(&config->include_zeroes, arg, num));
-
-    } else if (match(command, "retrans")) {
-        parse_check(parse_bool(&config->include_retrans, arg, num));
-
-    } else if (match(command, "bidir")) {
-        parse_check(parse_bool(&config->bidir, arg, num));
-
-    } else if (match(command, "dist")) {
-        parse_check(parse_bool(&config->byte_distribution, arg, num));
-
-    } else if (match(command, "cdist")) {
-        parse_check(parse_string(&config->compact_byte_distribution, arg, num));
-
-    } else if (match(command, "entropy")) {
-        parse_check(parse_bool(&config->report_entropy, arg, num));
-
-    } else if (match(command, "hd")) {
-        //parse_check(parse_int((unsigned int*)&config->report_hd, arg, num, 0, HDR_DSC_LEN));
-
-    } else if (match(command, "classify")) {
-        parse_check(parse_bool(&config->include_classifier, arg, num));
-
-    } else if (match(command, "bpf")) {
-        parse_check(parse_string(&config->bpf_filter_exp, arg, num));
-
-    } else if (match(command, "verbosity")) {
-        parse_check(parse_int((unsigned int*)&config->verbosity, arg, num, 0, 5));
-
-    } else if (match(command, "threads")) {
-#ifdef USE_AF_PACKET
-        parse_check(parse_int((unsigned int*)&config->num_threads, arg, num, 1, 24));
-#else
-        parse_check(parse_int((unsigned int*)&config->num_threads, arg, num, 1, 8));
-#endif
-
-    } else if (match(command, "num_pkts")) {
-        //parse_check(parse_int((unsigned int*)&config->num_pkts, arg, num, 0, MAX_NUM_PKT_LEN));
-
-    } else if (match(command, "count")) {
-        parse_check(parse_int(&config->max_records, arg, num, 1, INT_MAX));
-
-    } else if (match(command, "idp")) {
-        //parse_check(parse_int((unsigned int*)&config->idp, arg, num, 0, MAX_IDP));
-
-    } else if (match(command, "nfv9_port")) {
-        parse_check(parse_int((unsigned int*)&config->nfv9_capture_port, arg, num, 0, 0xffff));
-
-    } else if (match(command, "ipfix_collect_port")) {
-        parse_check(parse_int((unsigned int*)&config->ipfix_collect_port, arg, num, 0, 0xffff));
-
-    } else if (match(command, "ipfix_collect_online")) {
-        parse_check(parse_bool(&config->ipfix_collect_online, arg, num));
-
-    } else if (match(command, "ipfix_export_port")) {
-        parse_check(parse_int((unsigned int*)&config->ipfix_export_port, arg, num, 0, 0xffff));
-
-    } else if (match(command, "ipfix_export_remote_port")) {
-        parse_check(parse_int((unsigned int*)&config->ipfix_export_remote_port, arg, num, 0, 0xffff));
-
-    } else if (match(command, "ipfix_export_remote_host")) {
-        parse_check(parse_string(&config->ipfix_export_remote_host, arg, num));
-
-    } else if (match(command, "ipfix_export_template")) {
-        parse_check(parse_string(&config->ipfix_export_template, arg, num));
-
-    } else if (match(command, "updater")) {
-        parse_check(parse_bool(&config->updater_on, arg, num));
-
-    } else if (match(command, "nat")) {
-        parse_check(parse_bool(&config->flow_key_match_method, arg, num));
-
-    } else if (match(command, "anon")) {
-        parse_check(parse_string(&config->anon_addrs_file, arg, num));
-
-    } else if (match(command, "useranon")) {
-        parse_check(parse_string(&config->anon_http_file, arg, num));
-
-    } else if (match(command, "aux_resource_path")) {
-        parse_check(parse_string(&config->aux_resource_path, arg, num));
-
-    } else if (match(command, "preemptive_timeout")) {
-        parse_check(parse_bool(&config->preemptive_timeout, arg, num));
-
-    } else if (match(command, "exe")) {
-        parse_check(parse_bool(&config->report_exe, arg, num));
-
-    } else if (match(command, "show_config")) {
-        parse_check(parse_bool(&config->show_config, arg, num));
-
-    } else if (match(command, "show_interfaces")) {
-        parse_check(parse_bool(&config->show_interfaces, arg, num));
-
     }
-
-    config_all_features_bool(feature_list);
+    //config_all_features_bool(feature_list);
 
     return 1;
 }
@@ -340,23 +228,23 @@ static FILE* open_config_file(const char *filename) {
  * \return ok
  * \return failure
  */
-/*int config_set_from_file (configuration_t *config, const char *fname) {
+int config_set_from_file (configuration_t *config, const char *fname) {
     FILE *f;
     char *line = NULL;
     size_t ignore;
-    ssize_t len;
+    int len;
     unsigned int linecount = 0;
     char *c;
 
     f = open_config_file(fname);
     if (f == NULL) {
-        joy_log_err("could not find config file %s\n", fname);
-        return failure;
+        err_msg("could not find config file %s\n", fname);
+        return 0;
     } 
 
     /*
      * Setting the default configuration values!
-     *
+     */
     config_set_defaults(config);
 
     while ((len = getline(&line, &ignore, f)) != -1) {
@@ -365,12 +253,12 @@ static FILE* open_config_file(const char *filename) {
 
         linecount++;
         if (len > LINEMAX) {
-            fprintf(info, "error: line too long in file %s\n", fname);
+            fprintf(stderr, "error: line too long in file %s\n", fname);
             fclose(f);
-            return failure;
+            return 0;
         }
 
-        * ignore blank lines and comments /
+        /* ignore blank lines and comments */
         c = line;
         while (isblank(*c)) {
             c++;
@@ -378,16 +266,16 @@ static FILE* open_config_file(const char *filename) {
         if (*c == '#' || *c == '\n') {
             ;
         } else {
-            *
+            /*
              * a valid command line consists of a LHS, possibly followed by
              * an "=" and a RHS.  The newline and # (start of comment) is
              * not part of the RHS.
-             *
+             */
             num = sscanf(line, "%[^=] = %[^\n#]", lhs, rhs);
             if (num == 2 || num == 1) {
                        // printf("%s = %s ### %d ### %s", lhs, rhs, num, line);
-                       if (config_parse_command(config, lhs, rhs, num) != ok) {
-                           fprintf(info, "error: unknown command (%s)\n", lhs);
+                       if (config_parse_command(config, lhs, rhs, num) != 1) {
+                           fprintf(stderr, "error: unknown command (%s)\n", lhs);
                            fclose(f);
                            exit(EXIT_FAILURE);
                        }
@@ -398,7 +286,7 @@ static FILE* open_config_file(const char *filename) {
                        exit(EXIT_FAILURE);
             } else {
                        printf("error: could not parse line %s in file %s\n", line, fname);
-                       fprintf(info, "error: could not parse line %s in file %s\n", 
+                       fprintf(stderr, "error: could not parse line %s in file %s\n", 
                                              line, fname);
             }
         }
@@ -407,7 +295,7 @@ static FILE* open_config_file(const char *filename) {
     fclose(f);
     return 0;
 }
-*/
+
 /**
  * \fn int config_set_from_argv (configuration_t *config, char *argv[], int argc)
  *
@@ -420,8 +308,10 @@ static FILE* open_config_file(const char *filename) {
  * \return failure
  */
 int config_set_from_argv (configuration_t *config, char *argv[], int argc) {
+    puts(argv[0]);
+    puts(argv[1]);
     const char *line = NULL;
-    ssize_t len;
+    int len;
         int i;
     unsigned int linecount = 0;
     const char *c;
@@ -437,8 +327,8 @@ int config_set_from_argv (configuration_t *config, char *argv[], int argc) {
 
         linecount++;
         if (len > LINEMAX) {
-            fprintf(info, "error: line too long in argument %s\n", argv[i]);
-            return failure;
+            fprintf(stderr, "error: line too long in argument %s\n", argv[i]);
+            return 0;
         }
 
         /* ignore blank lines and comments */
@@ -456,8 +346,8 @@ int config_set_from_argv (configuration_t *config, char *argv[], int argc) {
              */
             num = sscanf(line, "%[^=] = %[^\n#]", lhs, rhs);
             if (num == 2) {
-                      // printf("%s = %s ### %d ### %s", lhs, rhs, num, line);
-                      if (config_parse_command(config, lhs, rhs, num) != ok) {
+                     // printf("%s = %s ### %d ### %s", lhs, rhs, num, line);
+                      if (config_parse_command(config, lhs, rhs, num) != 0) {
                           printf("error: did not understand command %s\n", lhs);
                           exit(EXIT_FAILURE);
                           //      break;
@@ -485,8 +375,9 @@ int config_set_from_argv (configuration_t *config, char *argv[], int argc) {
  * \param c pointer to the configuration structure
  * \return none
  */
+/*
 void config_print (FILE *f, const configuration_t *c) {
-   /* unsigned int i;
+    unsigned int i;
 #ifdef PACKAGE_VERSION
     fprintf(f, "joy version = %s\n", PACKAGE_VERSION);
 #else
@@ -524,11 +415,11 @@ void config_print (FILE *f, const configuration_t *c) {
     fprintf(f, "verbosity = %u\n", c->verbosity);
     fprintf(f, "threads = %u\n", c->num_threads);
     fprintf(f, "updater = %u\n", c->updater_on);
-  
-    /* note: anon_print_subnets is silent when no subnets are configured 
-    anon_print_subnets(f);
+  */
+    /* note: anon_print_subnets is silent when no subnets are configured */
+    /*anon_print_subnets(f);
 }
-
+*/
 /**
  * \fn void config_print_json (zfile f, const configuration_t *c)
  * \param f file to print configuration to
@@ -572,6 +463,6 @@ void config_print_json (zfile f, const configuration_t *c) {
 
     config_print_json_all_features_bool(feature_list);
 
-    zprintf(f, "\"end-config\":1}\n");  */
-}
+    zprintf(f, "\"end-config\":1}\n"); 
+}*/
 

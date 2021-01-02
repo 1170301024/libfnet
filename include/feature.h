@@ -51,6 +51,8 @@
 
 #define NO_FEATURE 44
 
+
+
 struct cfg_feature_set{
     int no_ft;
     unsigned char f_features[NO_FEATURE + 1]; 
@@ -76,4 +78,6 @@ struct feature_set{
                                     }   \
                                     fsp->no_ft = 0;   \
                                 }while(0);
+
+const char *feature_name(int feature_code);
 #endif
