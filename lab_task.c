@@ -9,7 +9,7 @@
 #include    "include/feature.h"
 #include    "debug.h"
 
-#define start_string "start shell"
+#define start_string "start tcpdump"
 #define end_string "kill tcpdump"
 
 
@@ -122,18 +122,21 @@ FILE * file;
 
 // 
 time_t last_handler_time = -1;
-int csv_file_count =101;
+int csv_file_count =1;
 
 int flow_count;
+
+char * data_file = "TWdata200";
+
 void handler(const unsigned char* arg, struct feature_set * fts){
     if(last_handler_time == -1 || time(NULL) - last_handler_time > 1){
         char file_path[256];
         last_handler_time = time(NULL);
-        sprintf(file_path, "../result/%d.csv", csv_file_count);
+        sprintf(file_path, "../%s_feature/%d.csv", data_file, csv_file_count);
         if((file = fopen(file_path, "w+")) == NULL){
             err_quit("canno't open file");
         }
-        sprintf(file_path, "../data200/%d/logs/%d.log", csv_file_count, csv_file_count);
+        sprintf(file_path, "../%s/%d/logs/%d.log", data_file, csv_file_count, csv_file_count);
         puts(file_path);
         read_logfile(file_path);
         csv_file_count++;
@@ -141,7 +144,7 @@ void handler(const unsigned char* arg, struct feature_set * fts){
     //     printf("action:%s, start_time:%ld, end_time:%ld\n", a->action, a->start_time, a->end_time);
     // }
 
-        fprintf(file, "flow_number,action,packets_length_total\n");
+        fprintf(file, "flow_number,action,packets_length_total,filename,protocol,sip,dip,sport,dport\n");
     }
     char start_timebuf[256], end_timebuf[256];
     time_t ms_start_flow, ms_end_flow;
@@ -193,9 +196,22 @@ void handler(const unsigned char* arg, struct feature_set * fts){
             }
         }
         if(vaild_f){
-            fprintf(file, "]\"\n");
-        }
+            fprintf(file, "]\"");
+            fprintf(file, ",%d.pcap", csv_file_count);
+           
+            fprintf(file, ",%s,%s,%s,%s,%s\n", fts->features[PR]->ft_val, 
+                                    fts->features[SA]->ft_val,
+                                    fts->features[DA]->ft_val,
+                                    fts->features[SP]->ft_val,
+                                    fts->features[DP]->ft_val);
+            if(strcmp(fts->features[PR]->ft_val, "6")){
+                fflush(file);
+                getchar();
+            }
+        }   
+        
     }
+    
     flow_count++;
     fflush(file);
 }
@@ -210,7 +226,7 @@ read_logfile(char *file_path){
 
     action_list = NULL;
     if((file = fopen(file_path, "r")) == NULL){
-        err_quit("cann't open logfile");
+        err_quit("cannot open logfile");
     }
     do{
         fgets(line, 256, file);
@@ -220,15 +236,17 @@ read_logfile(char *file_path){
         }
         puts(line);
         if(action_flag == 0 && strcmp(start_string, line) == 0){
-            fgets(line, 256, file); // blank line
+            fgets(line, 256, file); // start tcpdump time line
+            fgets(line, 256, file); // start tcpdump message line
             action_flag = 1;
             time_f = 0;
             continue;
         }
+        
         else if(action_flag == 0){
             continue;
         }
-        if(strlen(line) == 1){
+        if(strlen(line) <= 1){
             continue;
         }
         // read start time of action || read end time of action
@@ -253,6 +271,9 @@ read_logfile(char *file_path){
             if(time_f == 0){
                 if(action_list == NULL){
                     cur_action = (struct action*)malloc(sizeof (struct action));
+                    if(cur_action == NULL){
+                        err_quit("malloc error");
+                    }
                     action_list = cur_action;
                 }
                 else{

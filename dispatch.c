@@ -56,14 +56,13 @@ dispatch(feature_handler fhandler, unsigned char * fhdl_args){
     struct feature_set *fts;
     
     for( ; ; ){
-        printf("%d", rfsockfd);
         n = recvfrom(rfsockfd, ft_msg, MAX_UDP_MSG, 0, &server_addr_d, &addr_len);
 
         if(n < 0){
             err_sys("recvfrom error");
             continue;
         }
-        printf("Receive a packet from %s:%d\n", inet_ntoa(((struct sockaddr_in*)&server_addr_d)->sin_addr), ntohs(((struct sockaddr_in*)&server_addr_d)->sin_port));
+        //printf("Receive a packet from %s:%d\n", inet_ntoa(((struct sockaddr_in*)&server_addr_d)->sin_addr), ntohs(((struct sockaddr_in*)&server_addr_d)->sin_port));
 
         // parse the packet as a feature packet
         short proto_len;

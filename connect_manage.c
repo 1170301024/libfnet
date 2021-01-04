@@ -267,5 +267,3 @@ restore_server(){
     return -1;
 
 }
-
-
