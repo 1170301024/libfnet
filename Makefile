@@ -40,3 +40,4 @@ feature.o:
 .PHONY: clean
 clean:
 	rm *.o 
+	rm lab_task

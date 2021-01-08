@@ -9,8 +9,8 @@
 #include    "include/feature.h"
 #include    "debug.h"
 
-#define start_string "start tcpdump"
-#define end_string "kill tcpdump"
+#define start_string "#start"
+#define end_string "#end"
 
 
 
@@ -126,7 +126,7 @@ int csv_file_count =1;
 
 int flow_count;
 
-char * data_file = "TWdata200";
+char * data_file = "TWdata200_1";
 
 void handler(const unsigned char* arg, struct feature_set * fts){
     if(last_handler_time == -1 || time(NULL) - last_handler_time > 1){
@@ -236,8 +236,7 @@ read_logfile(char *file_path){
         }
         puts(line);
         if(action_flag == 0 && strcmp(start_string, line) == 0){
-            fgets(line, 256, file); // start tcpdump time line
-            fgets(line, 256, file); // start tcpdump message line
+            
             action_flag = 1;
             time_f = 0;
             continue;
