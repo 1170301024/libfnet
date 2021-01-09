@@ -36,3 +36,4 @@ feature.o:
 .PHONY: clean
 clean:
 	rm *.o 
+	rm fnet_client

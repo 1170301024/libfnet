@@ -214,7 +214,7 @@ int main(int argc, char **argv){
     // if(argc == 1){
     //     return usage(argv[0]);
     // }
-    puts("3");
+    
     if(argc > 1){
         for(i=0; i<num_action_cmds; i++){
             if(strcmp(argv[1], action_command[i]) == 0){
@@ -223,7 +223,7 @@ int main(int argc, char **argv){
             }
         }
     }
-    puts("2");
+    
     /* Sanity check argument syntax */
     for (i=1; i<argc; i++) {
         if (strchr(argv[i], '=')) {
@@ -240,7 +240,6 @@ int main(int argc, char **argv){
         argv++;
         argc--;
     }
-    puts("1");
     num_cmds = config_set_from_argv(&glb_config, argv, argc);
     argv += num_cmds;
     argc -= num_cmds;
