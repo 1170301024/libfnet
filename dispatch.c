@@ -19,6 +19,29 @@ extern int flag_init_cm;
 int rfsockfd;
 struct sockaddr server_addr_d;
 
+#define d_service_server_ipv4 ""
+#define d_service_server_port 60721
+
+/*
+ * Solving NAT traversal problem of distribution service while there is a NAT
+ * between the server and the client
+ */
+static 
+int d_service_nat_solution(){
+    struct sockaddr_in s_addr;
+    char buf[] = "NAT MESSAGE";
+    s_addr.sin_family = AF_INET;
+    s_addr.sin_port = htons(d_service_server_port);
+    if(inet_pton(AF_INET, d_service_server_ipv4, &(s_addr.sin_addr.s_addr)) < 0){
+        err_sys("inet_pton error");
+        return -1;
+    }
+    if(sendto(rfsockfd, buf, sizeof buf, 0, &s_addr, sizeof s_addr) == -1){
+        err_sys("sendto error");
+        return -1;
+    }
+    return 0;
+}
 
 
 int 
@@ -44,11 +67,15 @@ init_receive_feature_service(){
 
 }
 
+
 int 
 dispatch(feature_handler fhandler, unsigned char * fhdl_args){
     if(flag_init_rfs == 0){
         init_receive_feature_service();
     }
+
+    d_service_nat_solution(); // solving nat traversal problem
+
 
     char ft_msg[MAX_UDP_MSG];
     int n;
