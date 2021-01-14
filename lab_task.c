@@ -126,7 +126,7 @@ int csv_file_count =1;
 
 int flow_count;
 
-char * data_file = "FBdata200_3";
+char * data_file = "test";
 
 void handler(const unsigned char* arg, struct feature_set * fts){
     if(last_handler_time == -1 || time(NULL) - last_handler_time > 1){
@@ -154,10 +154,11 @@ void handler(const unsigned char* arg, struct feature_set * fts){
 
         ms_start_flow = (time_t)(start_time * 1000); 
         ms_start_flow = (time_t)(end_time * 1000);
-        //strftime(start_timebuf, 256, "%Y-%m-%d_%H:%M:%S\0", localtime(&start_time));
-        //strftime(end_timebuf, 256, "%Y-%m-%d_%H:%M:%S\0", localtime(&end_time));
+        const time_t st = (int) start_time, et = (int) end_time;
+        strftime(start_timebuf, 256, "%Y-%m-%d_%H:%M:%S\0", localtime(&st));
+        strftime(end_timebuf, 256, "%Y-%m-%d_%H:%M:%S\0", localtime(&et));
         
-        //fprintf(file, "%d,%s,%s,", flow_count++, start_timebuf, end_timebuf);
+        
     }
     
     
@@ -197,13 +198,18 @@ void handler(const unsigned char* arg, struct feature_set * fts){
         }
         if(vaild_f){
             fprintf(file, "]\"");
-            fprintf(file, ",%d.pcap", csv_file_count);
-           
+            fprintf(file, ",%d.pcap", csv_file_count-1);
+            // test
+            //fprintf(file, ",%s,%s,", start_timebuf, end_timebuf);
+            //fprintf(file, "%l,%l,", a->start_time, a->end_time);
+
+            // end test
             fprintf(file, ",%s,%s,%s,%s,%s\n", fts->features[PR]->ft_val, 
                                     fts->features[SA]->ft_val,
                                     fts->features[DA]->ft_val,
                                     fts->features[SP]->ft_val,
                                     fts->features[DP]->ft_val);
+            
             if(strcmp(fts->features[PR]->ft_val, "6")){
                 fflush(file);
                 getchar();
