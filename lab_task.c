@@ -25,6 +25,8 @@ struct packet_info{
 };
 
 struct action{
+    char start_time_str[128];
+    char ent_time_str[128];
     time_t start_time;
     time_t end_time;
     char action[128];
@@ -144,7 +146,7 @@ void handler(const unsigned char* arg, struct feature_set * fts){
     //     printf("action:%s, start_time:%ld, end_time:%ld\n", a->action, a->start_time, a->end_time);
     // }
 
-        fprintf(file, "flow_number,action,packets_length_total,filename,protocol,sip,dip,sport,dport\n");
+        fprintf(file, "flow_number,action,action_start_time,action_end_time,flow_start_time,flow_end_time,packets_capture_time,file\n");
     }
     char start_timebuf[256], end_timebuf[256];
     time_t ms_start_flow, ms_end_flow;
@@ -153,8 +155,8 @@ void handler(const unsigned char* arg, struct feature_set * fts){
         double end_time = atof(fts->features[TIME_END]->ft_val);
 
         ms_start_flow = (time_t)(start_time * 1000); 
-        ms_start_flow = (time_t)(end_time * 1000);
-        const time_t st = (int) start_time, et = (int) end_time;
+        ms_end_flow = (time_t)(end_time * 1000);
+        const time_t st = ms_start_flow / 1000, et = ms_end_flow /1000 ;
         strftime(start_timebuf, 256, "%Y-%m-%d_%H:%M:%S\0", localtime(&st));
         strftime(end_timebuf, 256, "%Y-%m-%d_%H:%M:%S\0", localtime(&et));
         
@@ -177,39 +179,42 @@ void handler(const unsigned char* arg, struct feature_set * fts){
             time_t pkt_time = ms_start_flow + it;
             if(pkt_time > a->start_time && pkt_time < a->end_time){
                 if(!vaild_f){
-                    fprintf(file, "%d,%s,\"[", flow_count, a->action);
+                    fprintf(file, "%d,%s", flow_count, a->action);
+                    fprintf(file, ",%s,%s,%s_%d,%s_%d,\"[", a->start_time_str, a->ent_time_str, start_timebuf, ms_start_flow%1000 , end_timebuf, ms_end_flow%1000);
+                    //fprintf(file, ",%ld,%ld,%ld,%ld,\"[", a->start_time, a->end_time, ms_start_flow, ms_end_flow);
+
                     if(pkts->packets[i].dir == 0){
-                        fprintf(file, "%d" , pkts->packets[i].size);
+                        fprintf(file, "%d(%d)" , pkts->packets[i].size, it);
                     }
                     else{
-                        fprintf(file, "-%d", pkts->packets[i].size);
+                        fprintf(file, "-%d(%d)", pkts->packets[i].size, it);
                     }
                     vaild_f = 1;
                     continue;
                 }
                 if(pkts->packets[i].dir == 0){
-                    fprintf(file, ", %d", pkts->packets[i].size);
+                    fprintf(file, ", %d(%d)", pkts->packets[i].size, it);
                 }
                 else{
-                    fprintf(file, ", -%d", pkts->packets[i].size);
+                    fprintf(file, ", -%d(%d)", pkts->packets[i].size, it);
                 }
                 
             }
         }
         if(vaild_f){
             fprintf(file, "]\"");
-            fprintf(file, ",%d.pcap", csv_file_count-1);
+            fprintf(file, ",%d.pcap\n", csv_file_count-1);
             // test
             //fprintf(file, ",%s,%s,", start_timebuf, end_timebuf);
             //fprintf(file, "%l,%l,", a->start_time, a->end_time);
 
             // end test
-            fprintf(file, ",%s,%s,%s,%s,%s\n", fts->features[PR]->ft_val, 
+            /*fprintf(file, ",%s,%s,%s,%s,%s\n", fts->features[PR]->ft_val, 
                                     fts->features[SA]->ft_val,
                                     fts->features[DA]->ft_val,
                                     fts->features[SP]->ft_val,
                                     fts->features[DP]->ft_val);
-            
+            */
             if(strcmp(fts->features[PR]->ft_val, "6")){
                 fflush(file);
                 getchar();
@@ -286,10 +291,12 @@ read_logfile(char *file_path){
                     cur_action = cur_action->next;
                 }
                 cur_action->start_time = mktime(&tm) * 1000 + (int)(m_time / 1000000);
+                memcpy(cur_action->start_time_str, line, strlen(line) + 1); // copy null character
                 time_f = 1;
             }
             else{
                 cur_action->end_time = mktime(&tm) * 1000 + (int)(m_time / 1000000);
+                memcpy(cur_action->ent_time_str, line, strlen(line) + 1); // copy null character
                 time_f = 0;
                 
             }
