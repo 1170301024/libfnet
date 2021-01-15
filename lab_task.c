@@ -126,7 +126,7 @@ int csv_file_count =1;
 
 int flow_count;
 
-char * data_file = "test";
+char * data_file = "TWdata200_2";
 
 void handler(const unsigned char* arg, struct feature_set * fts){
     if(last_handler_time == -1 || time(NULL) - last_handler_time > 1){
@@ -153,7 +153,7 @@ void handler(const unsigned char* arg, struct feature_set * fts){
         double end_time = atof(fts->features[TIME_END]->ft_val);
 
         ms_start_flow = (time_t)(start_time * 1000); 
-        ms_start_flow = (time_t)(end_time * 1000);
+        ms_end_flow = (time_t)(end_time * 1000);
         const time_t st = (int) start_time, et = (int) end_time;
         strftime(start_timebuf, 256, "%Y-%m-%d_%H:%M:%S\0", localtime(&st));
         strftime(end_timebuf, 256, "%Y-%m-%d_%H:%M:%S\0", localtime(&et));
