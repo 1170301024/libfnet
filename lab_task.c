@@ -7,10 +7,10 @@
 #include    "include/dispatch.h"
 #include    "include/error.h"
 #include    "include/feature.h"
+#include    "include/fnetlib.h"
 #include    "debug.h"
 
-#define start_string "#start"
-#define end_string "#end"
+
 
 
 
@@ -40,12 +40,15 @@ struct action *action_list;
 int 
 get_packet_size_dir_time(const char *str, struct packet_info * pi){
 
+    
     int size_offset = 5, dir_offset, time_offset;
     char num_str[256];
-    if((pi->size = atoi(str + size_offset)) == 0){
+    if(fnet_atoi(&pi->size, str + size_offset) == -1){
+        err_quit("error");
         return -1;
     }
     
+
     sprintf(num_str, "%d\0", pi->size);
     dir_offset = size_offset + strlen(num_str) + 8;
     if(*(str + dir_offset) == '<'){
@@ -60,9 +63,11 @@ get_packet_size_dir_time(const char *str, struct packet_info * pi){
     }
 
     time_offset = dir_offset + 9;
-    if((pi->ms_time = atoi(str + time_offset)) == 0){
+    if(fnet_atoi(&pi->ms_time, str + time_offset) == -1){
+        err_quit("error");
         return -1;
     }
+
     return 0;
 }
 
@@ -84,6 +89,7 @@ parser_packets(const char * str_pkts){
         }
         i++;
     }
+
     if(num_pkt == 0){
         return NULL;
     }
@@ -119,7 +125,7 @@ more:
 
     
 }
-FILE * file;
+FILE * file, *json_output_file;
 
 
 // 
@@ -128,20 +134,33 @@ int csv_file_count =1;
 
 int flow_count;
 
-char * data_file = "test";
+char * data_file = "TWdata200_2";
 
 void handler(const unsigned char* arg, struct feature_set * fts){
+
+
+    // if it's the first time to call handler, open a csv file and parse the corresponding log file
     if(last_handler_time == -1 || time(NULL) - last_handler_time > 1){
         char file_path[256];
         last_handler_time = time(NULL);
         sprintf(file_path, "../%s_feature/%d.csv", data_file, csv_file_count);
         if((file = fopen(file_path, "w+")) == NULL){
-            err_quit("canno't open file");
+            err_quit("cannot open file");
         }
         sprintf(file_path, "../%s/%d/logs/%d.log", data_file, csv_file_count, csv_file_count);
         puts(file_path);
         read_logfile(file_path);
+
+ // open json output file
+        /*sprintf(file_path, "../%s_feature/%d.txt", data_file, csv_file_count);
+        if((json_output_file = fopen(file_path, "w+")) == NULL){
+            err_quit("cannot open file");
+        }*/
+
+
+// end 
         csv_file_count++;
+        flow_count = 1;
     // for(struct action *a = action_list; a!= NULL; a=a->next){
     //     printf("action:%s, start_time:%ld, end_time:%ld\n", a->action, a->start_time, a->end_time);
     // }
@@ -150,6 +169,25 @@ void handler(const unsigned char* arg, struct feature_set * fts){
     }
     char start_timebuf[256], end_timebuf[256];
     time_t ms_start_flow, ms_end_flow;
+
+/* output information of flow*/
+   /* fprintf(json_output_file, "{");
+    int first_f = 1;
+    for(int i=1; i<=NO_FEATURE; i++){
+        if(fts->f_feature[i]){
+            if(first_f){
+                first_f = 0;
+                fprintf(json_output_file, "\"%s\":%s", feature_name(fts->features[i]->ft_code), fts->features[i]->ft_val);
+            }
+            else{
+                fprintf(json_output_file, ",\"%s\":%s", feature_name(fts->features[i]->ft_code), fts->features[i]->ft_val);
+            }
+            
+        }    
+    }
+    fprintf(json_output_file, "}\n");
+    fflush(json_output_file);
+// end*/
     if(fts->f_feature[TIME_START] && fts->f_feature[TIME_END]){
         double start_time = atof(fts->features[TIME_START]->ft_val);
         double end_time = atof(fts->features[TIME_END]->ft_val);
@@ -158,27 +196,31 @@ void handler(const unsigned char* arg, struct feature_set * fts){
         ms_end_flow = (time_t)(end_time * 1000);
         const time_t st = ms_start_flow / 1000, et = ms_end_flow /1000 ;
         strftime(start_timebuf, 256, "%Y-%m-%d_%H:%M:%S\0", localtime(&st));
-        strftime(end_timebuf, 256, "%Y-%m-%d_%H:%M:%S\0", localtime(&et));
-        
-        
+        strftime(end_timebuf, 256, "%Y-%m-%d_%H:%M:%S\0", localtime(&et));   
     }
     
-    
     struct packets * pkts = parser_packets(fts->features[PACKETS]->ft_val);
+    /*for(int i =0; i<pkts->no_pkt; i++){
+        fprintf(json_output_file, "(%d,%d) ", pkts->packets[i].size, pkts->packets[i].ms_time);
+    }*/
+    
     if(pkts == NULL){
         err_msg("error");
         return;
     }
     
-    for(struct action *a = action_list; a!= NULL; a=a->next){
-        //printf("action:%s, start_time:%ld, end_time:%ld\n", a->action, a->start_time, a->end_time);
-        int it = 0;
-        int vaild_f = 0;
+    int match_action_f = 0;
+    for(struct action *a = action_list; a != NULL; a=a->next){
+                
+        int it = 0;  // interval time
+        int valid_f = 0;    
         for(int i=0; i < pkts->no_pkt; i++){
+            
             it += pkts->packets[i].ms_time;
             time_t pkt_time = ms_start_flow + it;
             if(pkt_time > a->start_time && pkt_time < a->end_time){
-                if(!vaild_f){
+                match_action_f = 1;
+                if(!valid_f){
                     fprintf(file, "%d,%s", flow_count, a->action);
                     fprintf(file, ",%s,%s,%s_%d,%s_%d,\"[", a->start_time_str, a->ent_time_str, start_timebuf, ms_start_flow%1000 , end_timebuf, ms_end_flow%1000);
                     //fprintf(file, ",%ld,%ld,%ld,%ld,\"[", a->start_time, a->end_time, ms_start_flow, ms_end_flow);
@@ -189,7 +231,7 @@ void handler(const unsigned char* arg, struct feature_set * fts){
                     else{
                         fprintf(file, "-%d(%d)", pkts->packets[i].size, it);
                     }
-                    vaild_f = 1;
+                    valid_f = 1;
                     continue;
                 }
                 if(pkts->packets[i].dir == 0){
@@ -201,14 +243,12 @@ void handler(const unsigned char* arg, struct feature_set * fts){
                 
             }
         }
-        if(vaild_f){
+        if(valid_f){
             fprintf(file, "]\"");
             fprintf(file, ",%d.pcap\n", csv_file_count-1);
-            // test
-            //fprintf(file, ",%s,%s,", start_timebuf, end_timebuf);
-            //fprintf(file, "%l,%l,", a->start_time, a->end_time);
+            
 
-            // end test
+            
             /*fprintf(file, ",%s,%s,%s,%s,%s\n", fts->features[PR]->ft_val, 
                                     fts->features[SA]->ft_val,
                                     fts->features[DA]->ft_val,
@@ -221,16 +261,51 @@ void handler(const unsigned char* arg, struct feature_set * fts){
             }
         }   
         
+        
     }
-    
+    if(!match_action_f){
+        fprintf(file, "%d,null", flow_count);
+        fprintf(file, ",null,null,%s_%d,%s_%d,\"[", start_timebuf, ms_start_flow%1000 , end_timebuf, ms_end_flow%1000);
+        int it = 0;
+        for(int i=0; i < pkts->no_pkt; i++){
+            it += pkts->packets[i].ms_time;
+            time_t pkt_time = ms_start_flow + it;
+            if(pkts->packets[i].dir == 0){
+                fprintf(file, ",%d(%d)" , pkts->packets[i].size, it);
+            }
+            else{
+                fprintf(file, ",-%d(%d)", pkts->packets[i].size, it);
+            }
+        }
+        fprintf(file, "]\"");
+        fprintf(file, ",%d.pcap\n", csv_file_count-1);
+
+    }
     flow_count++;
     fflush(file);
 }
 
+/*
+ * format of logfile
+ *  #start
+ * 
+ *  start time of action
+ *  action
+ *  end time of action
+ * 
+ *  [repeat]....
+ * 
+ *  #end
+ * 
+ */
+#define LOGFILE_MAX_LINE 256
+
+#define LOGFILE_START_STRING    "#start"
+#define LOGFILE_END_STRING  "#end"
 int
 read_logfile(char *file_path){
     FILE * file = NULL;
-    char line[256];
+    char line[LOGFILE_MAX_LINE];
     struct tm tm;
     int action_flag = 0, time_f = 0;
     struct action * cur_action;
@@ -242,11 +317,11 @@ read_logfile(char *file_path){
     do{
         fgets(line, 256, file);
         line[strlen(line)-1] = '\0';
-        if(strcmp(end_string, line) == 0){
+        if(strcmp(LOGFILE_END_STRING, line) == 0){
             break;
         }
         puts(line);
-        if(action_flag == 0 && strcmp(start_string, line) == 0){
+        if(action_flag == 0 && strcmp(LOGFILE_START_STRING, line) == 0){
             
             action_flag = 1;
             time_f = 0;
@@ -271,9 +346,8 @@ read_logfile(char *file_path){
                 else if(_flag == 1 && *(line+i) == '_'){
                     *(line+i) = '\0';
                     m_time = atoi(line+i+1);
-                    puts(line);
                     strptime(line, "%Y-%m-%d %H:%M:%S", &tm);
-                    printf("mktime:%ld\n", mktime(&tm));
+                    //printf("mktime:%ld\n", mktime(&tm));
                     _flag = 2;
                 }
                 i++;
@@ -291,12 +365,12 @@ read_logfile(char *file_path){
                     cur_action = cur_action->next;
                 }
                 cur_action->start_time = mktime(&tm) * 1000 + (int)(m_time / 1000000);
-                memcpy(cur_action->start_time_str, line, strlen(line) + 1); // copy null character
+                memcpy(cur_action->start_time_str, line, strlen(line) + 1); // copy action time str include null character
                 time_f = 1;
             }
             else{
                 cur_action->end_time = mktime(&tm) * 1000 + (int)(m_time / 1000000);
-                memcpy(cur_action->ent_time_str, line, strlen(line) + 1); // copy null character
+                memcpy(cur_action->ent_time_str, line, strlen(line) + 1); 
                 time_f = 0;
                 
             }
@@ -307,9 +381,7 @@ read_logfile(char *file_path){
             strcpy(cur_action->action, line);
             time_f = 2;
         }
-    }while(strcmp(end_string, line) != 0);
-   
-    
+    }while(1);    
 }
 
 int 
@@ -342,15 +414,16 @@ main(void){
 
     init_receive_feature_service();
 
-    // if((file = fopen("./lab_task.csv", "w+")) == NULL){
-    //     err_quit("cann't open file");
-    // }
-    // read_logfile();
-    // // for(struct action *a = action_list; a!= NULL; a=a->next){
-    // //     printf("action:%s, start_time:%ld, end_time:%ld\n", a->action, a->start_time, a->end_time);
-    // // }
 
-    // fprintf(file, "flow_number,action,packets_length_total\n");
     dispatch(handler, NULL);
+    /*char *pkt_str = "[{\"b\":46,\"dir\":\">\",\"ipt\":0},{\"b\":0,\"dir\":\"<\",\"ipt\":0},{\"b\":0,\"dir\":\">\",\"ipt\":2307},{\"b\":38,\"dir\":\"<\",\"ipt\":0},{\"b\":0,\"dir\":\">\",\"ipt\":0},{\"b\":554,\"dir\":\"<\",\"ipt\":0},{\"b\":0,\"dir\":\"<\",\"ipt\":188},{\"b\":0,\"dir\":\">\",\"ipt\":0},{\"b\":0,\"dir\":\"<\",\"ipt\":1019},{\"b\":0,\"dir\":\">\",\"ipt\":2976},{\"b\":38,\"dir\":\"<\",\"ipt\":0},{\"b\":0,\"dir\":\">\",\"ipt\":0},{\"b\":0,\"dir\":\"<\",\"ipt\":0},{\"b\":0,\"dir\":\">\",\"ipt\":1023},{\"b\":38,\"dir\":\"<\",\"ipt\":0},{\"b\":0,\"dir\":\">\",\"ipt\":0},{\"b\":0,\"dir\":\"<\",\"ipt\":0},{\"b\":0,\"dir\":\">\",\"ipt\":1089},{\"b\":0,\"dir\":\"<\",\"ipt\":0},{\"b\":47,\"dir\":\">\",\"ipt\":3278},{\"b\":0,\"dir\":\"<\",\"ipt\":0}]";
+    struct packets * pkts = parser_packets(pkt_str);
+    
+    if(pkts == NULL){
+        err_quit("error");
+    }
+    for(int i =0; i<pkts->no_pkt; i++){
+        fprintf(stdout, "%d ", pkts->packets[i].ms_time);
+    }*/
 }
 

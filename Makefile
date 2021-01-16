@@ -2,7 +2,7 @@
 INCLDDIR = include
 CFLAGS = -O2 -I $(INCLDDIR)  -Wall #-Wbad-function-cast -Wchar-subscripts -Wcomment -Wdeprecated-declarations -Wdisabled-optimization -Wdiv-by-zero -Wendif-labels -Wformat -Wformat-extra-args -Wformat-security -Wformat-y2k -Wimplicit -Wimplicit-function-declaration -Wimplicit-int -Wimport -Winline -Winvalid-pch -Wmain -Wmissing-braces -Wmissing-format-attribute -Wmissing-noreturn -Wmultichar -Wnested-externs -Wnonnull -Wparentheses -Wpointer-arith -Wreturn-type -Wsequence-point -Wsign-compare -Wstrict-aliasing -Wstrict-prototypes -Wswitch -Wswitch-default -Wswitch-enum -Wsystem-headers -Wtrigraphs -Wunknown-pragmas -Wunused -Wunused-function -Wunused-label -Wunused-parameter -Wunused-value -Wunused-variable -Wwrite-strings -Wno-pointer-sign -Wextra -fPIC -fPIE -D_FORTIFY_SOURCE=2 -O -D_GNU_SOURCE  -Wunused-but-set-variable -Wcast-align -Wl,-z,noexecstack
 
-OBJS = lab_task.o connect_manage.o dispatch.o error.o 
+OBJS = lab_task.o connect_manage.o dispatch.o error.o feature.o fnetlib.c
 
 CLIENT_OBJS = fnet_client.o connect_manage.o \
 				dispatch.o error.o config.o libfnet.o feature.o
@@ -36,6 +36,9 @@ config.o:
 
 feature.o:
 	cc -c $(CFLAGS) feature.c
+
+fnetlib.o:
+	cc -c $(CFLAGS) fnetlib.c
 	
 .PHONY: clean
 clean:
