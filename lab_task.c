@@ -7,6 +7,7 @@
 #include    "include/dispatch.h"
 #include    "include/error.h"
 #include    "include/feature.h"
+#include    "include/fnetlib.h"
 #include    "debug.h"
 
 #define start_string "#start"
@@ -40,8 +41,11 @@ get_packet_size_dir_time(const char *str, struct packet_info * pi){
 
     int size_offset = 5, dir_offset, time_offset;
     char num_str[256];
-    if((pi->size = atoi(str + size_offset)) == 0){
+    if(fnet_atoi(&pi->size, str + size_offset) == -1){
+        puts(str);
+        err_msg("error");
         return -1;
+        
     }
     
     sprintf(num_str, "%d\0", pi->size);
@@ -53,19 +57,19 @@ get_packet_size_dir_time(const char *str, struct packet_info * pi){
         pi->dir = 1;
     }
     else{
-        err_msg("%c string parser error", *(str + dir_offset));
-        return -1;
+        err_quit("%c string parser error", *(str + dir_offset));
     }
 
     time_offset = dir_offset + 9;
-    if((pi->ms_time = atoi(str + time_offset)) == 0){
-        return -1;
+    if(fnet_atoi(&pi->ms_time, str + time_offset) == -1){
+        puts(str);
+        err_quit("error");
     }
     return 0;
 }
 
 struct packets *
-parser_packets(const char * str_pkts){
+parse_packets(const char * str_pkts){
     int offset = 0, num_pkt = 0, pkt_start, pkt_end, pkt_count = 0;
     char pkt_str[128];
     
@@ -132,19 +136,20 @@ void handler(const unsigned char* arg, struct feature_set * fts){
     if(last_handler_time == -1 || time(NULL) - last_handler_time > 1){
         char file_path[256];
         last_handler_time = time(NULL);
+
         sprintf(file_path, "../%s_feature/%d.csv", data_file, csv_file_count);
         if((file = fopen(file_path, "w+")) == NULL){
-            err_quit("canno't open file");
+            err_quit("cannot open file");
         }
+        fprintf(file, "flow_number,action,packets_length_total,filename,protocol,sip,dip,sport,dport\n");
+
         sprintf(file_path, "../%s/%d/logs/%d.log", data_file, csv_file_count, csv_file_count);
         puts(file_path);
         read_logfile(file_path);
-        csv_file_count++;
-    // for(struct action *a = action_list; a!= NULL; a=a->next){
-    //     printf("action:%s, start_time:%ld, end_time:%ld\n", a->action, a->start_time, a->end_time);
-    // }
 
-        fprintf(file, "flow_number,action,packets_length_total,filename,protocol,sip,dip,sport,dport\n");
+        csv_file_count++;
+        flow_count = 1;
+        
     }
     char start_timebuf[256], end_timebuf[256];
     time_t ms_start_flow, ms_end_flow;
@@ -162,7 +167,7 @@ void handler(const unsigned char* arg, struct feature_set * fts){
     }
     
     
-    struct packets * pkts = parser_packets(fts->features[PACKETS]->ft_val);
+    struct packets * pkts = parse_packets(fts->features[PACKETS]->ft_val);
     if(pkts == NULL){
         err_msg("error");
         return;
@@ -301,8 +306,6 @@ read_logfile(char *file_path){
             time_f = 2;
         }
     }while(strcmp(end_string, line) != 0);
-   
-    
 }
 
 int 
