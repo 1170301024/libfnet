@@ -12,7 +12,9 @@
 
 
 
-
+struct debug{
+    int tcp_retrans;
+};
 
 struct packets{
     int no_pkt;
@@ -32,7 +34,6 @@ struct action{
     char action[128];
     struct action *next;
 };
-
 struct action *action_list;
 /*
  * {"b":size,"dir":"<","ipt":ipt}
@@ -72,7 +73,7 @@ get_packet_size_dir_time(const char *str, struct packet_info * pi){
 }
 
 struct packets *
-parser_packets(const char * str_pkts){
+parse_packets(const char * str_pkts){
     int offset = 0, num_pkt = 0, pkt_start, pkt_end, pkt_count = 0;
     char pkt_str[128];
     
@@ -128,6 +129,26 @@ more:
 FILE * file, *json_output_file;
 
 
+struct debug *
+parse_debug(const char * str_debug){
+    if (str_debug == NULL){
+        return NULL;
+    }
+    int tcp_retrans_offset = 2, retrans_val_offset = 15;
+    int retrans_val;
+    struct debug * debug;
+    if(strncmp("tcp_retrans", str_debug + tcp_retrans_offset, 11) != 0){
+        err_quit("In function parse_debug: cannot parse debug feature string: %s", str_debug);
+    }
+
+    if(fnet_atoi(&retrans_val, str_debug + retrans_val_offset) == -1){
+        err_quit("In function parse_debug: cannot parse debug feature string: %s", str_debug);
+    }
+    debug = (struct debug*)malloc(sizeof (struct debug));
+    debug->tcp_retrans = retrans_val;
+    return debug;
+
+}
 // 
 time_t last_handler_time = -1;
 int csv_file_count =1;
@@ -135,6 +156,9 @@ int csv_file_count =1;
 int flow_count;
 
 char * data_file = "TWdata200_2";
+int num_packet = 0;
+int num_pkt_in_out = 0;
+int num_retrans = 0;
 
 void handler(const unsigned char* arg, struct feature_set * fts){
 
@@ -152,10 +176,10 @@ void handler(const unsigned char* arg, struct feature_set * fts){
         read_logfile(file_path);
 
  // open json output file
-        /*sprintf(file_path, "../%s_feature/%d.txt", data_file, csv_file_count);
+        sprintf(file_path, "../%s_feature/%d.txt", data_file, csv_file_count);
         if((json_output_file = fopen(file_path, "w+")) == NULL){
             err_quit("cannot open file");
-        }*/
+        }
 
 
 // end 
@@ -171,7 +195,7 @@ void handler(const unsigned char* arg, struct feature_set * fts){
     time_t ms_start_flow, ms_end_flow;
 
 /* output information of flow*/
-   /* fprintf(json_output_file, "{");
+   fprintf(json_output_file, "{");
     int first_f = 1;
     for(int i=1; i<=NO_FEATURE; i++){
         if(fts->f_feature[i]){
@@ -199,10 +223,30 @@ void handler(const unsigned char* arg, struct feature_set * fts){
         strftime(end_timebuf, 256, "%Y-%m-%d_%H:%M:%S\0", localtime(&et));   
     }
     
-    struct packets * pkts = parser_packets(fts->features[PACKETS]->ft_val);
-    /*for(int i =0; i<pkts->no_pkt; i++){
-        fprintf(json_output_file, "(%d,%d) ", pkts->packets[i].size, pkts->packets[i].ms_time);
-    }*/
+    struct packets * pkts = parse_packets(fts->features[PACKETS]->ft_val);
+    /*struct debug * debug = parse_debug(fts->features[DEBUG]->ft_val);
+    if(debug != NULL) num_retrans += debug->tcp_retrans;
+    // test
+   /* int num1;
+    if(fnet_atoi(&num1, fts->features[NUM_PKTS_IN]->ft_val) == -1){
+        err_quit("eror");
+    }
+    num_pkt_in_out += num1;
+    if(fnet_atoi(&num1, fts->features[NUM_PKTS_OUT]->ft_val) == -1){
+        err_quit("eror");
+    }
+    num_pkt_in_out += num1;
+    //end*/
+    for(int i =0; i<pkts->no_pkt; i++){
+        //fprintf(stderr, "%d ", pkts->packets[i].size);
+        num_packet++;
+    }/*
+    fprintf(stderr, "\n");*/
+    fprintf(stderr, "number of packets: %d\n", num_packet);
+    fprintf(stderr, "number of flows %d\n", flow_count);
+    
+    /*printf("num_retrans:%d\n", num_retrans);*/
+   
     
     if(pkts == NULL){
         err_msg("error");
