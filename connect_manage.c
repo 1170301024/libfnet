@@ -95,7 +95,7 @@ resend:
         return -1;
     }
 #ifdef LIBFNET_DEBUG
-    printf("sent request to server(%d)\n", no_try);
+    //printf("sent request to server(%d)\n", no_try);
 #endif
     alarm(SO_SOCKET_TIMEOUT);    
     if((*rlen = recvfrom(cmsockfd, rbuf, rsize, 0, &server_addr, &server_addr_len)) < 0){
@@ -144,7 +144,7 @@ connect_server(){
     }
 
 #ifdef LIBFNET_DEBUG
-    printf("Received connection response from server\n");
+   // printf("Received connection response from server\n");
 #endif
     if(n != 4){
         err_msg("NO byte from server error");
@@ -209,7 +209,7 @@ config_server(const struct cfg_feature_set * ft_set){
     }
 
 #ifdef LIBFNET_DEBUG
-    printf("receive config response from server\n");
+    //printf("receive config response from server\n");
 #endif
     if(n != 4){
         err_msg("NO byte from server error");
@@ -253,7 +253,7 @@ restore_server(){
     }
 
 #ifdef LIBFNET_DEBUG
-    printf("Received restore response from server\n");
+    //printf("Received restore response from server\n");
 #endif
     if(n != 4){
         err_msg("NO byte from server error");

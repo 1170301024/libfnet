@@ -149,6 +149,42 @@ parse_debug(const char * str_debug){
     return debug;
 
 }
+FILE * csv_file;
+void lab_task_share_handle(const unsigned char* arg, struct feature_set * fts){
+    struct packets * pkts = parse_packets(fts->features[PACKETS]->ft_val);
+    fprintf(csv_file, "%s,%s,%s,%s,%s", fts->features[SA]->ft_val,
+                                    fts->features[SP]->ft_val,
+                                    fts->features[DA]->ft_val,
+                                    fts->features[DP]->ft_val,
+                                    fts->features[PR]->ft_val);
+    fprintf(csv_file, ",\"[");
+    int valid_f = 0;
+    for(int i=0; i < pkts->no_pkt; i++){  
+        if(!valid_f){
+            if(pkts->packets[i].dir == 0){
+                fprintf(csv_file, "%d" , pkts->packets[i].size);
+            }
+            else{
+                fprintf(csv_file, "-%d", pkts->packets[i].size);
+            }
+            valid_f = 1;
+            continue;
+        }
+        if(pkts->packets[i].dir == 0){
+            fprintf(csv_file, ", %d", pkts->packets[i].size);
+        }
+        else{
+            fprintf(csv_file, ", -%d", pkts->packets[i].size);
+        }
+        
+    }
+    if(valid_f){
+        fprintf(csv_file, "]\"\n");
+    }
+    fflush(csv_file);;
+
+}
+
 // 
 time_t last_handler_time = -1;
 int csv_file_count =1;
@@ -284,6 +320,7 @@ void handler(const unsigned char* arg, struct feature_set * fts){
                 else{
                     fprintf(file, ", -%d(%d)", pkts->packets[i].size, it);
                 }
+
                 
             }
         }
@@ -429,7 +466,16 @@ read_logfile(char *file_path){
 }
 
 int 
-main(void){
+main(int args, char *argv[]){
+    if (args != 2){
+        err_quit("lab_task arguments error");
+    }
+    if(NULL == (csv_file = fopen(argv[1], "w+"))){
+        err_quit("Canont open file %s", argv[1]);
+    }
+
+    fprintf(csv_file, "src ip,dst ip,src port,dst port,protocol,packets\n");
+
     if(init_connect_manage() < 0){
         err_quit("connection initialized failed");
     }
@@ -440,8 +486,7 @@ main(void){
     struct cfg_feature_set cfs;
     memset(&cfs, 0x00, sizeof cfs);
 
-    unsigned char fs[] = {SA, DA, PR, SP, DP, TIME_START, TIME_END, 
-                PACKETS};
+    unsigned char fs[] = {SA, DA, PR, SP, DP, PACKETS};
     cfs.no_ft = sizeof fs;
 
     for(int i=0; i<cfs.no_ft; i++){
@@ -458,8 +503,10 @@ main(void){
 
     init_receive_feature_service();
 
+   
 
-    dispatch(handler, NULL);
+    dispatch(lab_task_share_handle, NULL);
+    return 0;
     /*char *pkt_str = "[{\"b\":46,\"dir\":\">\",\"ipt\":0},{\"b\":0,\"dir\":\"<\",\"ipt\":0},{\"b\":0,\"dir\":\">\",\"ipt\":2307},{\"b\":38,\"dir\":\"<\",\"ipt\":0},{\"b\":0,\"dir\":\">\",\"ipt\":0},{\"b\":554,\"dir\":\"<\",\"ipt\":0},{\"b\":0,\"dir\":\"<\",\"ipt\":188},{\"b\":0,\"dir\":\">\",\"ipt\":0},{\"b\":0,\"dir\":\"<\",\"ipt\":1019},{\"b\":0,\"dir\":\">\",\"ipt\":2976},{\"b\":38,\"dir\":\"<\",\"ipt\":0},{\"b\":0,\"dir\":\">\",\"ipt\":0},{\"b\":0,\"dir\":\"<\",\"ipt\":0},{\"b\":0,\"dir\":\">\",\"ipt\":1023},{\"b\":38,\"dir\":\"<\",\"ipt\":0},{\"b\":0,\"dir\":\">\",\"ipt\":0},{\"b\":0,\"dir\":\"<\",\"ipt\":0},{\"b\":0,\"dir\":\">\",\"ipt\":1089},{\"b\":0,\"dir\":\"<\",\"ipt\":0},{\"b\":47,\"dir\":\">\",\"ipt\":3278},{\"b\":0,\"dir\":\"<\",\"ipt\":0}]";
     struct packets * pkts = parser_packets(pkt_str);
     

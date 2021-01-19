@@ -68,7 +68,10 @@ dispatch(feature_handler fhandler, unsigned char * fhdl_args){
         short proto_len;
         int msg_offset;
 
-        if(ft_msg[0] != FEATURE || ft_msg[1] != GENERAL_CODE){
+        if(ft_msg[0] == MESSAGE && ft_msg[1] == PROC_PCAP_FIN){
+            return 0;
+        }
+        else if(ft_msg[0] != FEATURE || ft_msg[1] != GENERAL_CODE){
             err_msg("feature packet error");
             continue;
         }
