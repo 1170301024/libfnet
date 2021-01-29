@@ -114,7 +114,7 @@ dispatch(feature_handler fhandler, unsigned char * fhdl_args){
         
 
         do{
-            struct feature *ft = (struct feature*)malloc(sizeof (struct feature)); 
+            struct feature_ *ft = (struct feature_*)malloc(sizeof (struct feature_)); 
             if(ft == NULL){
                 err_msg("malloc error");
                 return -1;

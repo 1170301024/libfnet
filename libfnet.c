@@ -1,11 +1,22 @@
+#include    <pthread.h>
+#include    <unistd.h>
+#include    <stdio.h>
+#include    <fcntl.h>
+
 #include    "include/libfnet.h"
 #include    "include/connect_manage.h"
 #include    "include/dispatch.h"
 #include    "include/feature.h"
 #include    "include/error.h"
+#include    "include/flow.h"
+#include    "include/extractor.h"
+#include    "include/fnetthread.h"
 
+extern FILE * flow_pipe_in;
+extern FILE * flow_pipe_out;
 extern int flag_init_cm;
 extern int flag_init_rfs;
+
 int 
 fnet_connect(){
     if(!flag_init_cm){
@@ -68,6 +79,42 @@ fnet_dispatch(int loop, feature_handler fhdl, unsigned char *fhdl_args){
     return dispatch(fhdl, fhdl_args);
 }
 
+
+int 
+fnet_process_pcap(const char * pcap_file, feature_handler fhdl, unsigned char *fhdl_args){
+
+    if(pcap_file == NULL){
+        return -1;
+    }
+    if(fhdl == NULL){
+        return -1;
+    }
+    pthread_t cmtid, dtid;
+    int rc, fxpid;
+    int fxd_pipe[2];
+
+    // create a pipe
+    if(pipe(fxd_pipe) == -1){
+        err_quit("pipe error");
+    }
+    if((fxpid = fork()) == 0){
+        // close the descriptor for reading
+        close(fxd_pipe[0]);
+        flow_pipe_out = fdopen(fxd_pipe[1], "w"); 
+        if(init_feature_extract_service() == 0){
+            return feature_extract_from_pcap(pcap_file);
+        }
+
+        return -1;
+    }
+    // sleep 1s for waiting feature extraction service to finish initiazation
+    sleep(1); 
+    // close the descriptor for writing
+    close(fxd_pipe[1]);
+    flow_pipe_in = fdopen(fxd_pipe[0], "r");
+    flow_distribute(fhdl);
+    return 0;
+}
 
 
 

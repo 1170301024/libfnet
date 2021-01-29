@@ -16,4 +16,5 @@ int fnet_restore(void);
 
 int fnet_dispatch(int loop, feature_handler, unsigned char *hdl_args);
 
+int fnet_process_pcap(const char * pcap_file, feature_handler fhdl, unsigned char *fhdl_args);
 #endif
