@@ -30,16 +30,13 @@ struct intrface {
     unsigned char active;
 };
 
-int init_feature_extract_service();
-static int feature_extract(pcap_t *handle, unsigned int ctx_idx);
-int feature_extract_from_interface(char *device);
-int feature_extract_from_pcap(char * f_pcap);
+int init_feature_extract_service(void);
+int feature_extract_from_interface(const char *device);
+int feature_extract_from_pcap(const char * f_pcap);
 
-static int find_interface_in_list(char *name);
 void print_interfaces(FILE *f_info, int num_ifs);
-unsigned int interface_list_get();
-pcap_t * open_pcap_device(char *device);
-pcap_t * open_pcap_file(char *file_name);
+pcap_t * open_pcap_device(const char *device);
+pcap_t * open_pcap_file(const char *file_name);
 
 
 #if (DEBUG_MEASURE_TIME == 1)

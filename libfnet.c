@@ -81,7 +81,7 @@ fnet_dispatch(int loop, feature_handler fhdl, unsigned char *fhdl_args){
 
 
 int 
-fnet_process_pcap(const char * pcap_file, feature_handler fhdl, unsigned char *fhdl_args){
+fnet_process_pcap(const char * pcap_file, feature_handler fhdl, unsigned char *fhdl_argv){
 
     if(pcap_file == NULL){
         return -1;
@@ -89,8 +89,8 @@ fnet_process_pcap(const char * pcap_file, feature_handler fhdl, unsigned char *f
     if(fhdl == NULL){
         return -1;
     }
-    pthread_t cmtid, dtid;
-    int rc, fxpid;
+
+    int fxpid;
     int fxd_pipe[2];
 
     // create a pipe
@@ -112,7 +112,7 @@ fnet_process_pcap(const char * pcap_file, feature_handler fhdl, unsigned char *f
     // close the descriptor for writing
     close(fxd_pipe[1]);
     flow_pipe_in = fdopen(fxd_pipe[0], "r");
-    flow_distribute(fhdl);
+    flow_distribute(fhdl, fhdl_argv);
     return 0;
 }
 

@@ -52,7 +52,7 @@ void free_flow_record(struct flow_record *record);
 int json_string2flow_record(struct flow_record *flow_record, char *str);
 
 void 
-flow_distribute(feature_handler handler);
+flow_distribute(feature_handler handler, const unsigned char *fthd_argv);
 
 void flow_record2json_string(struct flow_record *flow_record, char **str);
 

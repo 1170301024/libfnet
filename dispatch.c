@@ -27,7 +27,7 @@ struct sockaddr server_addr_d;
  * between the server and the client
  */
 static 
-int d_service_nat_solution(){
+int d_service_nat_solution(void){
     struct sockaddr_in s_addr;
     char buf[] = "NAT MESSAGE";
     s_addr.sin_family = AF_INET;
@@ -36,7 +36,7 @@ int d_service_nat_solution(){
         err_sys("inet_pton error");
         return -1;
     }
-    if(sendto(rfsockfd, buf, sizeof buf, 0, &s_addr, sizeof s_addr) == -1){
+    if(sendto(rfsockfd, buf, sizeof buf, 0, (struct sockaddr*)&s_addr, sizeof s_addr) == -1){
         err_sys("sendto error");
         return -1;
     }

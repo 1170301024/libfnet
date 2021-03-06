@@ -6,8 +6,10 @@
 #include    <stdlib.h>
 
 #include    "include/joy/joy_api.h"
-#include    "include/joy/joy_api_private.h"   
+#include    "include/joy/joy_api_private.h"  
+#include    "include/joy/pkt_proc.h" 
 #include    "include/nflog.h"
+#include    "include/error.h"
 
 /*
  * parse nflog protocol 
@@ -46,7 +48,8 @@ static const struct ethernet pad_linker = {
     .type = {0x08, 0x00}
 };
 
-void nflog_libpcap_process_packet(unsigned char *ctx_index,
+void 
+nflog_libpcap_process_packet(unsigned char *ctx_index,
                         const struct pcap_pkthdr *header,
                         const unsigned char *packet)
 {
@@ -68,11 +71,11 @@ void nflog_libpcap_process_packet(unsigned char *ctx_index,
     
     if(*(packet + payload_offset) != 0x45){
         fprintf(stderr, "caplen:%d\n", header->caplen);
-        for(int i=0; i<header->caplen; i++){
+        for(unsigned int i=0; i<header->caplen; i++){
             fprintf(stderr, "%#x ", *(packet + i));
         }
         fprintf(stderr, "\n");
-        for(int i=0; i<header->caplen; i++){
+        for(unsigned int i=0; i<header->caplen; i++){
             fprintf(stderr, "%#x ", *((unsigned char *)linker_addr + i));
         }
         fprintf(stderr, "\n");

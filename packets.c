@@ -1,6 +1,10 @@
 #include    <stdlib.h>
+#include    <string.h>
+#include    <stdio.h>
 
 #include    "include/fnetlib.h"
+#include    "include/error.h"
+
 
 
 /*
@@ -18,7 +22,7 @@ get_packet_info(const char *str, struct packet_info * pi){
     }
     
 
-    sprintf(num_str, "%d\0", pi->size);
+    sprintf(num_str, "%d", pi->size);
     dir_offset = size_offset + strlen(num_str) + 8;
     if(*(str + dir_offset) == '<'){
         pi->dir = 0;

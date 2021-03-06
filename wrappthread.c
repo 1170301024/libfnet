@@ -6,6 +6,7 @@
 #include	<stdarg.h>		/* ANSI C header file */
 #include	<syslog.h>		/* for syslog() */
 #include    <stdio.h>
+#include 	<pthread.h>
 
 #include    "include/fnetthread.h"
 #include    "include/error.h"
