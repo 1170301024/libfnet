@@ -308,16 +308,14 @@ int config_set_from_file (configuration_t *config, const char *fname) {
  * \return failure
  */
 int config_set_from_argv (configuration_t *config, char *argv[], int argc) {
-    puts(argv[0]);
-    puts(argv[1]);
     const char *line = NULL;
     int len;
         int i;
     unsigned int linecount = 0;
     const char *c;
-
+    
     config_set_defaults(config);
-
+    
     for (i=1; i<argc; i++) {
         int num;
         char lhs[LINEMAX], rhs[LINEMAX];

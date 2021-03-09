@@ -3,7 +3,7 @@
 
 #include    "feature.h"
 #define SERVER_FEATURE_DISTRIBUTE_PORT 60721
-#define SERVER_FEATURE_DISTRIBUTE_IPV4 "192.168.182.133"
+#define SERVER_FEATURE_DISTRIBUTE_IPV4 "192.168.2.11"
 
 
 typedef void (*feature_handler)(const unsigned char *, struct feature_set*);
