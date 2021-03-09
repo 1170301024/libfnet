@@ -107,7 +107,7 @@ fnet_process_pcap(const char * pcap_file, feature_handler fhdl, unsigned char *f
 
         return -1;
     }
-    // sleep 1s for waiting feature extraction service to finish initiazation
+    // sleep 1s for waiting feature extraction service to finish initialization
     sleep(1); 
     // close the descriptor for writing
     close(fxd_pipe[1]);
