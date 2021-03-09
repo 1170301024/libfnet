@@ -1,6 +1,7 @@
 #include    <stdio.h>
 #include    <string.h>
 #include    <stdlib.h>
+
 #define __USE_XOPEN     // for use strptime function
 #include    <time.h>
 #undef __USE_XOPEN
@@ -12,20 +13,6 @@
 #include    "debug.h"
 
 
-
-// for packets feature in a flow record
-struct packets{
-    int no_pkt;
-    struct packet_info *packets;
-};
-
-// denote each packet in a flow record
-struct packet_info{
-    int size;
-    int dir; /*  0 for inbound. 1 for outbound*/
-    int ms_time;
-};
-
 // denote each action in logfile
 struct action{
     time_t start_time;
@@ -36,96 +23,6 @@ struct action{
 
 struct action *action_list;
 
-/*
- * {"b":pkt_len,"dir":"<","ipt":ipt}
- * {"rep":65536-pkt_len,"dir":"<", "ipt":ipt}
- */
-static int 
-get_packet_info(const char *str, struct packet_info * pi){
-
-    int size_offset = 5, dir_offset, time_offset;
-    char num_str[256];
-    if(fnet_atoi(&pi->size, str + size_offset) == -1){
-        size_offset += 2;
-        // handle rep
-        if(fnet_atoi(&pi->size, str + size_offset) == -1){
-            err_quit("in function get_packet_info: cannot parse packet string: %s", str);  
-        }
-       
-    }
-    
-    sprintf(num_str, "%d\0", pi->size);
-    dir_offset = size_offset + strlen(num_str) + 8;
-    if(*(str + dir_offset) == '<'){
-        pi->dir = 0;
-    } 
-    else if(*(str + dir_offset) == '>'){
-        pi->dir = 1;
-    }
-    else{
-        err_quit("in function get_packet_info: cannot parse packet string: %s", str);  
-    }
-
-    time_offset = dir_offset + 9;
-    if(fnet_atoi(&pi->ms_time, str + time_offset) == -1){
-        err_quit("in function get_packet_info: cannot parse packet string: %s", str);  
-    }
-    return 0;
-}
-
-/*
- * parse packet feature with following format
- */
-struct packets *
-parse_packets(const char * str_pkts){
-    int offset = 0, num_pkt = 0, pkt_start, pkt_end, pkt_count = 0;
-    char pkt_str[128];
-    
-    struct packets *pkts = (struct packets*)malloc(sizeof (struct packets));
-    if(pkts == NULL){
-        err_msg("malloc error");
-        return NULL;
-    }
-
-    int i = 0;
-    while(*(str_pkts + i) != '\0'){
-        if(*(str_pkts + i) == '{'){
-            num_pkt++;
-        }
-        i++;
-    }
-    if(num_pkt == 0){
-        return NULL;
-    }
-
-    pkts->no_pkt = num_pkt;
-    pkts->packets = (struct  packet_info*) malloc(sizeof (struct packet_info) * num_pkt);
-
-    if(*str_pkts != '['){
-        return NULL;
-    }
-more:
-    offset += 1;
-
-    if(*(str_pkts + offset) != '{')
-        return NULL;
-
-    pkt_start = offset;
-    do{
-        offset++;
-    }while(*(str_pkts + offset) != '}');
-    pkt_end = offset;
-    memcpy(pkt_str, str_pkts + pkt_start, pkt_end -pkt_start + 1);
-    pkt_str[pkt_end -pkt_start + 1] = '\0';
-
-    get_packet_info(pkt_str, pkts->packets + pkt_count);
-    pkt_count++;
-    if(pkt_count == num_pkt){
-        return pkts;
-    }
-    offset++;
-    goto more;
-}
 FILE * file;
 
 
@@ -324,48 +221,58 @@ read_logfile(char *file_path){
             else{
                 cur_action->end_time = time * 1000 + (int)(m_time / 1000000);
                 time_f = 0;
-                
             }
-            continue;
-        }
-        // read action
-        if(time_f == 1){
-            strcpy(cur_action->action, line);
-            time_f = 2;
         }
     }while(1);
 }
 
+#include    "include/fnetlib.h"
+#include    "include/libfnet.h"
+#include    "include/error.h"
+#include    "include/feature.h"
+
+static FILE * csv_file;
+
+void lab_task_share_handle(const unsigned char* arg, struct feature_set * fts){
+    struct packets * pkts = parse_packets(fts->features[PACKETS]->ft_val);
+    fprintf(csv_file, "%s,%s,%s,%s,%s", fts->features[SA]->ft_val,
+                                    fts->features[SP]->ft_val,
+                                    fts->features[DA]->ft_val,
+                                    fts->features[DP]->ft_val,
+                                    fts->features[PR]->ft_val);
+    fprintf(csv_file, ",\"[");
+    int valid_f = 0;
+    for(int i=0; i < pkts->no_pkt; i++){  
+        if(!valid_f){
+            if(pkts->packets[i].dir == 0){
+                fprintf(csv_file, "%d" , pkts->packets[i].size);
+            }
+            else{
+                fprintf(csv_file, "-%d", pkts->packets[i].size);
+
+            }
+            valid_f = 1;
+            continue;
+        }
+        if(pkts->packets[i].dir == 0){
+            fprintf(csv_file, ", %d", pkts->packets[i].size);
+        }
+    }
+
+}
+
 
 int 
-main(int argc, char * argv[]){
-    if(init_connect_manage() < 0){
-        err_quit("connection initialized failed");
-    }
-    if(connect_server() < 0){
-        err_quit("connect to server failed");
-    }
-    
-    struct cfg_feature_set cfs;
-    memset(&cfs, 0x00, sizeof cfs);
+main(int args, char * argv[]){
+    char * pcap_file;
 
-    unsigned char fs[] = {SA, DA, PR, SP, DP, TIME_START, TIME_END, 
-                PACKETS};
-    cfs.no_ft = sizeof fs;
-
-    for(int i=0; i<cfs.no_ft; i++){
-        cfs.f_features[fs[i]] = 1;
+    if (args != 3){
+        err_quit("lab_task arguments error");
     }
-
-    if(config_server(&cfs) < 0){
-        err_quit("configure to server failed");
+    if(NULL == (csv_file = fopen(argv[2], "w+"))){
+        err_quit("Canont open file %s", argv[1]);
     }
-
-    if(restore_server() < 0){
-        err_quit("restore service failed");
-    }
-
-    init_receive_feature_service();
+    pcap_file = argv[1];
 
     // if((file = fopen("./lab_task.csv", "w+")) == NULL){
     //     err_quit("cann't open file");
@@ -376,6 +283,11 @@ main(int argc, char * argv[]){
     // // }
 
     // fprintf(file, "flow_number,action,packets_length_total\n");
-    dispatch(lab_task_data_traffic_handler, NULL);
-}
+    // dispatch(lab_task_data_traffic_handler, NULL);
 
+    fputs("src ip,dst ip,src port,dst port,protocol,packets\n", csv_file);
+    fflush(csv_file);
+    fnet_process_pcap(pcap_file, lab_task_share_handle, NULL);
+
+
+}

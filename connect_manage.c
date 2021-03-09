@@ -95,12 +95,12 @@ resend:
         return -1;
     }
 #ifdef LIBFNET_DEBUG
-    printf("sent request to server(%d)\n", no_try);
+    printf("sent request to server(%d/%d)\n", no_try, NO_MAX_TRY);
 #endif
     alarm(SO_SOCKET_TIMEOUT);    
     if((*rlen = recvfrom(cmsockfd, rbuf, rsize, 0, &server_addr, &server_addr_len)) < 0){
         if(errno == EINTR){
-            err_msg("socket timeout");
+            //err_msg("socket timeout");
             goto resend;
         }
         else{
