@@ -6,12 +6,14 @@
 #include    <time.h>
 #include    <string.h>
 
+#include    "debug.h"
 #include    "include/joy/joy_api.h"
 #include    "include/joy/joy_api_private.h"
 #include    "include/safe_c_stub/safe_lib.h"
 #include    "include/extractor.h"
 #include    "include/const.h"
 #include    "include/error.h"
+#include    "include/nflog.h"
 
 static struct intrface ifl[IFL_MAX];
 int no_ifs;
@@ -224,15 +226,14 @@ init_feature_extract_service(){
 #endif
 
     init_data.max_records = 0;
-    init_data.num_pkts = 100;
+    init_data.num_pkts = 1023;
     init_data.contexts = 1;
     init_data.idp = 1400;
-    init_data.inact_timeout=70;
+    init_data.inact_timeout=100;
 
     // turn on all bitmask value except JOY_IPFIX_EXPORT_ON
     // init_data.bitmask = JOY_ALL_ON & (~JOY_IPFIX_EXPORT_ON);
-    init_data.bitmask = JOY_BIDIR_ON | JOY_ZERO_ON;
-    
+    init_data.bitmask = JOY_BIDIR_ON | JOY_ZERO_ON | JOY_TLS_ON | JOY_RETRANS_ON;
     if(joy_initialize(&init_data, NULL, NULL, NULL) != 0){
         err_quit("=>Joy initialized failed<=", "");
     }
@@ -269,6 +270,7 @@ feature_extract(pcap_t *handle, unsigned int ctx_idx){
     while(more){
         joy_ctx_data *ctx = joy_index_to_context(ctx_idx);
         ctx->output = flow_pipe_out;
+        
 #if (DEBUG_MEASURE_TIME == 1)
         gettimeofday(&t_start, NULL);
 #endif
@@ -276,7 +278,7 @@ feature_extract(pcap_t *handle, unsigned int ctx_idx){
         
 
 #if (DEBUG_MEASURE_TIME == 1)
-        more = pcap_dispatch(handle, NO_PACKETS_IN_LOOP, task_joy_libpcap_process_packet, (unsigned char *) ctx->ctx_id);
+        more = pcap_dispatch(handle, NO_PACKETS_IN_LOOP, nflog_libpcap_process_packet, (unsigned char *) ctx->ctx_id);
         gettimeofday(&t_end, NULL);
         joy_timer_sub(&t_end, &t_start, &r_time);
         x_time += r_time.tv_sec + r_time.tv_usec /1000000.0;
@@ -286,6 +288,7 @@ feature_extract(pcap_t *handle, unsigned int ctx_idx){
 #endif
         
         joy_print_flow_data(ctx_idx, JOY_EXPIRED_FLOWS);
+
 
 #if (DEBUG_MEASURE_TIME == 1)
         gettimeofday(&t_end, NULL);
@@ -301,8 +304,8 @@ feature_extract(pcap_t *handle, unsigned int ctx_idx){
 
 #if (DEBUG_MEASURE_TIME == 1)
 
-    fprintf(stderr, "result of time measurement\n==========================\npcap_dispatch:%fs\njoy_print_flow_data:%fs\njoy_libpcap_process_packet:%fs\n", x_time, p_time, process_time);
-    fprintf(stderr, "number of packets: %d\n", num_packets);
+    /*fprintf(stderr, "result of time measurement\n==========================\npcap_dispatch:%fs\njoy_print_flow_data:%fs\njoy_libpcap_process_packet:%fs\n", x_time, p_time, process_time);
+    fprintf(stderr, "number of packets: %d\n", num_packets);*/
     
     
 #endif

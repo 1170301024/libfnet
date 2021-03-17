@@ -1,0 +1,40 @@
+start tcpdump
+2021-01-07_00:37:10_318646100
+tcpdump: listening on nflog:10246, link-type NFLOG (Linux netfilter log messages), capture size 262144 bytes
+ 
+#start
+ 
+2021-01-07_00:37:19_118392000
+FBtaplikes
+2021-01-07_00:37:21_735298400
+
+2021-01-07_00:37:29_765999500
+cancel likes
+2021-01-07_00:37:32_969592100
+
+2021-01-07_00:37:43_028152600
+FBforward
+2021-01-07_00:37:54_907945600
+
+2021-01-07_00:38:03_978284200
+FBcomment
+2021-01-07_00:38:15_072354900
+
+2021-01-07_00:38:33_487664100
+FBcmtcomment
+2021-01-07_00:38:43_435266600
+
+2021-01-07_00:38:56_738208800
+FBpost
+2021-01-07_00:39:00_331899300
+
+2021-01-07_00:39:07_353313500
+delete fb
+2021-01-07_00:39:13_448981700
+
+#end
+ 
+1060 packets captured
+1060 packets received by filter
+0 packets dropped by kernel
+sdcard/facebook/5.pcap: 1 file pulled, 0 skipped. 30.2 MB/s (436972 bytes in 0.014s)

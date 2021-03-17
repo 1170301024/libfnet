@@ -61,10 +61,10 @@
 //#ifndef COMPRESSED_OUTPUT
 //#define COMPRESSED_OUTPUT 1
 //#endif
-#ifdef FORCED_COMPRESSED_OUTPUT_OFF
-#undef COMPRESSED_OUTPUT
+/*#ifdef FORCED_COMPRESSED_OUTPUT_OFF
+#undef COMPRESSED_OUTPUT*/
 #define COMPRESSED_OUTPUT 0
-#endif
+//#endif
 
 #if (COMPRESSED_OUTPUT == 0)
 /** normal output */
@@ -76,12 +76,12 @@ typedef FILE *zfile;
 #define zflush(FILEp)        (fflush(FILEp))
 #define zclose(output)       (fclose(output))
 #define zsuffix              ""
-
+/*
 #else
 
 #ifdef USE_BZIP2
     /** bzip2 compressed output */
-    #include <bzlib.h>
+/*    #include <bzlib.h>
     int BZ2_bzprintf(BZFILE *b, const char * format, ...);
 
     typedef BZFILE *zfile;
@@ -100,7 +100,7 @@ typedef FILE *zfile;
 
 #else
     /** gzip compressed output */
-    #include <zlib.h>
+/*    #include <zlib.h>
     typedef gzFile zfile;
 
     #define zopen(fname, ...)    (gzopen(fname, __VA_ARGS__))
@@ -116,7 +116,7 @@ typedef FILE *zfile;
     #define zclose(output)       (gzclose(output))
     #define zsuffix              ".gz"
 #endif
-
+*/
 #endif
 
 #endif  /* OUTPUT_H */
