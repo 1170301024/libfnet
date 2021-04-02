@@ -194,9 +194,9 @@ get_flow_record(struct flow_record *record){
     
     int len;
     
-    char json_str[65535];
+    char json_str[6553555];
 
-    if(fgets(json_str, 65535, flow_pipe_in) == NULL){
+    if(fgets(json_str, 6553555, flow_pipe_in) == NULL){
         err_quit("pipe error or read efo");
     }
     
@@ -204,7 +204,7 @@ get_flow_record(struct flow_record *record){
     if(len <= 1){
         return -1;
     }
-    puts(json_str);
+    //puts(json_str);
 
     json_str[len-1] = '\0';
 

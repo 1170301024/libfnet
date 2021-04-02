@@ -226,10 +226,10 @@ init_feature_extract_service(){
 #endif
 
     init_data.max_records = 0;
-    init_data.num_pkts = 1023;
+    init_data.num_pkts = 8096;
     init_data.contexts = 1;
     init_data.idp = 1400;
-    init_data.inact_timeout=100;
+    init_data.inact_timeout=-1;
 
     // turn on all bitmask value except JOY_IPFIX_EXPORT_ON
     // init_data.bitmask = JOY_ALL_ON & (~JOY_IPFIX_EXPORT_ON);

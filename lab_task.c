@@ -11,7 +11,22 @@
 #include    "include/feature.h"
 #include    "include/fnetlib.h"
 #include    "include/libfnet.h"
+#include    "include/lablib.h"
+#include    "include/parse_log.h"
+#include    "include/tls.h"
 
+struct action_tls_map{
+    struct action * action;
+    int no_req_tls;
+    int no_res_tls;
+    struct {
+        int tls_seq;
+        int tls_len;
+    } tls_req[128], tls_res[128];
+    struct action_tls_map * next;
+};
+struct action * read_logfile(char * file_path);
+/*
 // denote each action in logfile
 struct action{
     time_t start_time;
@@ -20,11 +35,10 @@ struct action{
     struct action *next;
 };
 
-struct action *action_list;
+struct action *action_list;*/
 
 FILE * file;
-
-
+/*
 // 
 time_t last_handler_time = -1;
 int csv_file_count =1;
@@ -32,8 +46,8 @@ int csv_file_count =1;
 int flow_count;
 
 char * data_file = "TWdata200_2";
-
-
+*/
+/*
 void 
 lab_task_data_traffic_handler(const unsigned char* arg, struct feature_set * fts){
 
@@ -141,7 +155,7 @@ lab_task_data_traffic_handler(const unsigned char* arg, struct feature_set * fts
  *  #end
  * 
  */
-int
+/*int
 read_logfile(char *file_path){
     FILE * file = NULL;
     char line[LOGFILE_MAX_LINE];
@@ -223,144 +237,10 @@ read_logfile(char *file_path){
             }
         }
     }while(1);
-}
+}*/
 
-#include    "include/tls.h"
+
 static FILE * csv_file;
-
-
-struct dict_item_tcp2tls{
-    int tcp_no;
-    int * tls_no;
-    int num_tls_no;
-    struct dict_item_tcp2tls * next;
-};
-struct packetR_tcp2tls{
-    int no_item;
-    struct dict_item_tcp2tls * dict_item;
-};
-
-struct packetR_tcp2tls *
-tcp2tls_seq_dict(int * tcp_len_arr, int tcp_arr_size, int * tls_len_arr, int tls_arr_size){
-    int in_unmatched_tls_length = 0;
-    int in_unmatched_tcp_length = 0;
-    int out_unmatched_tls_length = 0;
-    int out_unmatched_tcp_length = 0;
-    int in_tls_loc =0;
-    int out_tls_loc = 0;
-
-    int count = 0;
-    int tls_in_tcp[1380];
-    struct packetR_tcp2tls * result;
-    struct dict_item_tcp2tls * cur_dict_item = NULL;
-
-    result = (struct packetR_tcp2tls *)calloc(1, sizeof (struct packetR_tcp2tls));
-    
-    // process tcp and tls length array
-    
-
-    for(int i=0; i < tcp_arr_size; i++){
-        int *u_tcp_len, *u_tls_len, *tls_loc;
-        int dir;
-        count = 0;
-        if(tcp_len_arr[i] == 0)   
-            continue;
-        
-        else if(tcp_len_arr[i] > 0){
-            u_tcp_len = &in_unmatched_tcp_length;
-            u_tls_len = &in_unmatched_tls_length;
-            tls_loc = &in_tls_loc;
-            dir = 1;
-        }
-        else{
-            u_tcp_len = &out_unmatched_tcp_length;
-            u_tls_len = &out_unmatched_tls_length;
-            tls_loc = &out_tls_loc;
-            dir = -1;
-        }
-        *u_tcp_len = dir==1 ? tcp_len_arr[i] : -tcp_len_arr[i];
-        
-        if(result->no_item == 0){
-            result->dict_item = (struct dict_item_tcp2tls *)calloc(1, sizeof (struct dict_item_tcp2tls));
-            cur_dict_item = result->dict_item;
-        }
-        else{
-            cur_dict_item->next = (struct dict_item_tcp2tls *)calloc(1, sizeof (struct dict_item_tcp2tls));
-            cur_dict_item = cur_dict_item->next;
-        }
-        result->no_item++;
-
-        if(*u_tls_len >= *u_tcp_len){
-            *u_tls_len -= *u_tcp_len;
-            *u_tcp_len = 0;
-            tls_in_tcp[count++] = (*tls_loc) - 1;
-            cur_dict_item->tcp_no = i;
-            cur_dict_item->tls_no = (int *)calloc(count, sizeof (int));
-            cur_dict_item->num_tls_no = count;
-            for(int n=0; n<count;n++){
-                cur_dict_item->tls_no[n] = tls_in_tcp[n];
-            }
-            continue;
-        }
-        else if(*u_tls_len > 0){
-            *u_tcp_len -= *u_tls_len; 
-            *u_tls_len = 0;
-            tls_in_tcp[count++] = (*tls_loc) - 1;
-            
-        }
-        printf("%d, %d, %d\n", *u_tcp_len, *u_tls_len, i);
-        for(int j=*tls_loc; j<tls_arr_size;  j++){
-            // revert to tcp len
-            (*tls_loc)++;
-            if(dir * tls_len_arr[j] < 0){
-                continue;
-            }
-
-            tls_in_tcp[count++] = j;
-            int tls2tcp_len = dir * tls_len_arr[j] + 5;
-
-            
-            //printf("%d, %d, %d, %d, %d\n", *u_tcp_len, *u_tls_len, tls2tcp_len, i, j);
-            if(tls2tcp_len >= *u_tcp_len){
-                *u_tls_len = tls2tcp_len - *u_tcp_len;
-                *u_tcp_len = 0;
-
-                cur_dict_item->tcp_no = i;
-                cur_dict_item->tls_no = (int *)calloc(count, sizeof (int));
-                cur_dict_item->num_tls_no = count;
-                for(int n=0; n<count;n++){
-                    cur_dict_item->tls_no[n] = tls_in_tcp[n];
-                }
-                break;
-            }
-            else{
-                *u_tcp_len -= tls2tcp_len;
-                *u_tls_len = 0;
-                
-                continue;
-            }
-            
-            
-        }
-        if(*u_tcp_len == 0){
-            continue;
-        }
-        else{
-            printf("error");
-            printf("tls_loc:%d, tls_array_len:%d", *tls_loc, tls_arr_size);
-            break;
-        }
-    }
-
-    /*for(struct dict_item_tcp2tls *item = result->dict_item; item!= NULL; item = item->next){
-        printf("%d(%d):[", item->tcp_no + 1, tcp_len_arr[item->tcp_no]);
-        for(int c=0; c<item->num_tls_no; c++){
-            printf("%d(%d) ", item->tls_no[c], tls_len_arr[item->tls_no[c]]);
-        }
-        puts("]\n");
-    }*/
-    return result;
-}
 
 void lab_task_share_handle(const unsigned char* arg, struct feature_set * fts){
 
@@ -380,14 +260,14 @@ void lab_task_share_handle(const unsigned char* arg, struct feature_set * fts){
 
     if(pkts == NULL) return ;
     tcp_len_arr = (int *) calloc(pkts->no_pkt, sizeof (int));
-
-    fprintf(csv_file, "%s,%s,%s,%s,%s", fts->features[SA]->ft_val,
+    int valid_f = 0;
+    /*fprintf(csv_file, "%s,%s,%s,%s,%s", fts->features[SA]->ft_val,
                                     fts->features[SP]->ft_val,
                                     fts->features[DA]->ft_val,
                                     fts->features[DP]->ft_val,
                                     fts->features[PR]->ft_val);
     fprintf(csv_file, ",\"[");
-    int valid_f = 0;
+    
     for(int i=0; i < pkts->no_pkt; i++){  
         if(!valid_f){
             if(pkts->packets[i].dir == 0){
@@ -411,7 +291,8 @@ void lab_task_share_handle(const unsigned char* arg, struct feature_set * fts){
         }
         tcp_len_arr[i] = (pkts->packets[i].dir==0 ? 1 : -1) * pkts->packets[i].size;
     }
-    fprintf(csv_file, "]\",\"[");
+    fprintf(csv_file, "]\",\"[");*/
+    fprintf(csv_file, "\"[");
     valid_f = 0;
     //puts(fts->features[TLS]->ft_val);
     srlt = parse_tls_srlt(fts->features[TLS]->ft_val);
@@ -441,17 +322,16 @@ void lab_task_share_handle(const unsigned char* arg, struct feature_set * fts){
     fprintf(csv_file, "]\"\n");
     fflush(csv_file);
     tcp2tls_seq_dict(tcp_len_arr, pkts->no_pkt, tls_len_arr, srlt->no_items);
-    // for(int i = 0;i<pkts->no_pkt; i++){
-    //     printf("%d, ", tcp_len_arr[i]);
-    // }
-    // puts("\n");
-    // for (int i =0; i<srlt->no_items; i++){
-    //     printf("%d, ", tls_len_arr[i]);
-    // }
+    /*for(int i = 0;i<pkts->no_pkt; i++){
+        printf("%d, ", tcp_len_arr[i]);
+    }
+    puts("\n");
+    for (int i =0; i<srlt->no_items; i++){
+        printf("%d, ", tls_len_arr[i]);
+    }*/
 
 
 }
-
 
 void lab_task_tls_tcp_handle(const unsigned char* arg, struct feature_set * fts){
     if (fts->f_feature[TLS] == 0)   return ;
@@ -477,7 +357,7 @@ void lab_task_tls_tcp_handle(const unsigned char* arg, struct feature_set * fts)
     
     // parse tls srlt feature
     srlt = parse_tls_srlt(fts->features[TLS]->ft_val);
-    puts(fts->features[TLS]->ft_val);
+    // puts(fts->features[TLS]->ft_val);
     tls_len_arr = (int *)calloc(srlt->no_items, sizeof (int));
 
     // get tls packet length
@@ -495,30 +375,174 @@ void lab_task_tls_tcp_handle(const unsigned char* arg, struct feature_set * fts)
     }
     int i = 1;
     for(struct dict_item_tcp2tls *item = r_result->dict_item; item!= NULL; item = item->next){
+        fprintf(csv_file_fp, "%d,%d,[", item->tcp_no + 1, tcp_len_arr[item->tcp_no]);
         for(int c=0; c<item->num_tls_no; c++){
-            fprintf(csv_file_fp, "%d,", i++);
-            fprintf(csv_file_fp, "%d,%d,", item->tcp_no + 1, tcp_len_arr[item->tcp_no]);
-            fprintf(csv_file_fp, "%d,%d\n", item->tls_no[c], tls_len_arr[item->tls_no[c]]);
+            //fprintf(csv_file_fp, "%d,", i++);
+           
+            fprintf(csv_file_fp, "(%d,%d),", item->tls_no[c] + 1, tls_len_arr[item->tls_no[c]]);
         }
+        fprintf(csv_file_fp, "]\n");
     }
+    
     fflush(csv_file_fp);
+}
 
+char * logfile;
+char * result_file_up;
+char * result_file_down;
+void lab_task_tls_tcp_handle2(const unsigned char* arg, struct feature_set * fts){
+    if (fts->f_feature[TLS] == 0)   return ;
 
+    int * tcp_len_arr;
+    int * tls_len_arr;
+    struct packets * pkts;
+    struct tls_srlt * srlt;
+    struct packetR_tcp2tls * r_result;
+
+    // parser packets feature
+    pkts = parse_packets(fts->features[PACKETS]->ft_val);
+    if(pkts == NULL) return ;
+        tcp_len_arr = (int *) calloc(pkts->no_pkt, sizeof (int));
+
+    // get tcp packet length
+    for(int i=0; i < pkts->no_pkt; i++){  
+        tcp_len_arr[i] = (!pkts->packets[i].dir ? 1 : -1) * pkts->packets[i].size;
+    }
+    
+    // parse tls srlt feature
+    srlt = parse_tls_srlt(fts->features[TLS]->ft_val);
+    // puts(fts->features[TLS]->ft_val);
+    tls_len_arr = (int *)calloc(srlt->no_items, sizeof (int));
+
+    // get tls packet length
+    for(int i=0; i < srlt->no_items; i++){  
+        tls_len_arr[i] = (!srlt->items[i].dir ? 1 : -1) * srlt->items[i].b;
+    }
+    
+    r_result = tcp2tls_seq_dict(tcp_len_arr, pkts->no_pkt, tls_len_arr, srlt->no_items);
+    struct action * actions = read_logfile(logfile);
+    struct action_tls_map * map = NULL;
+    struct action_tls_map *cur_lct_map, * prev_map;
+    int t[128];
+    int l[128];
+    int cnt = 0;
+    for (struct action * a = actions; a != NULL; a=a->next){
+        cur_lct_map = (struct action_tls_map *) calloc(1, sizeof (struct action_tls_map));
+        cur_lct_map->action = a;
+        cnt = 0;
+       
+        for(int i =0; i<a->no_req; i++){
+            for(struct dict_item_tcp2tls *item = r_result->dict_item; item!= NULL; item = item->next){
+                if(a->request_pkt_seq[i] == (item->tcp_no+1)){
+                    for(int c=0; c<item->num_tls_no; c++){
+                        for (int m=0; m<cnt; m++){
+                            if(t[m] == item->tls_no[c]){
+                                goto next_item1;
+                            }
+                        }
+                        t[cnt] = item->tls_no[c];
+                        l[cnt] = tls_len_arr[item->tls_no[c]];
+                        cnt++;
+                    next_item1:
+                        ;
+                    }
+                }
+            }
+        }
+        for(int m=0; m<cnt; m++){
+            cur_lct_map->tls_req[cur_lct_map->no_req_tls].tls_seq = t[m];
+            cur_lct_map->tls_req[cur_lct_map->no_req_tls].tls_len = l[m];
+            cur_lct_map->no_req_tls++;
+            
+        }
+        cnt = 0;
+        for(int i =0; i<a->no_res; i++){
+            for(struct dict_item_tcp2tls *item = r_result->dict_item; item!= NULL; item = item->next){
+                if(a->response_pkt_seq[i] == (item->tcp_no+1)){
+                    for(int c=0; c<item->num_tls_no; c++){
+                        for (int m=0; m<cnt; m++){
+                            if(t[m] == item->tls_no[c]){
+                                goto next_item;
+                            }
+                        }
+                        t[cnt] = item->tls_no[c];
+                        l[cnt] = tls_len_arr[item->tls_no[c]];
+                        cnt++;
+                    next_item:
+                        ;
+                    }
+                }   
+            }             
+        }
+        for(int m=0; m<cnt; m++){
+            cur_lct_map->tls_res[cur_lct_map->no_res_tls].tls_seq = t[m];
+            cur_lct_map->tls_res[cur_lct_map->no_res_tls].tls_len = l[m];
+            cur_lct_map->no_res_tls++;
+            
+        }
+        if (map == NULL){
+            map = cur_lct_map;
+        }
+        else{
+            prev_map->next = cur_lct_map;
+        }
+        prev_map = cur_lct_map;
+    }
+    FILE * up_fp, *down_fp;
+    if((up_fp = fopen(result_file_up, "w")) == NULL){
+        err_quit("cannot open logfile");
+    }
+    if((down_fp = fopen(result_file_down, "w")) == NULL){
+        err_quit("cannot open logfile");
+    }
+    fprintf(up_fp, "tls seq, tls len, action\n");
+    fprintf(down_fp, "tls seq, tls len, action\n");
+    int flag_o_up, flag_o_down;
+    for(int n=0; n<srlt->no_items; n++){   
+        flag_o_up = flag_o_down = 0; // represent not find
+        for(struct action_tls_map * atm = map; atm != NULL; atm = atm->next){
+            for(int i=0; !flag_o_up &&  i<atm->no_req_tls;i++){
+                if(n == atm->tls_req[i].tls_seq){
+                    flag_o_up = 1; // find
+                    fprintf(up_fp, "%d,%d,%s\n", n+1, abs(atm->tls_req[i].tls_len), atm->action->name);
+                }    
+            }
+            for(int i=0; !flag_o_down && i<atm->no_res_tls;i++){
+                if(n+1 == atm->tls_res[i].tls_seq){
+                    flag_o_down = 1;
+                    fprintf(down_fp, "%d,%d,%s\n", n+1, abs(atm->tls_res[i].tls_len), atm->action->name);
+                }
+                
+            }
+            if(flag_o_up || flag_o_down){
+                break;
+            }
+        }
+        if(!flag_o_up){
+            fprintf(up_fp, "%d, %d\n", n+1, abs(tls_len_arr[n]));
+        }
+        if(!flag_o_down){
+            fprintf(down_fp, "%d, %d\n", n+1, abs(tls_len_arr[n]));
+        }
+        
+    }
+    
+    
 }
 int 
 main(int args, char * argv[]){
     char * pcap_file;
 
-    /*if (args != 3){
-        err_quit("lab_task arguments error");
-    }
-    if(NULL == (csv_file = fopen(argv[2], "w+"))){
-        err_quit("Canont open file %s", argv[1]);
-    }*/
-    if(args != 2){
+    // if (args != 3){
+    //     err_quit("lab_task arguments error");
+    // }
+    if(args != 5){
         err_quit("lab_task arguments error");
     }
     pcap_file = argv[1];
+    logfile = argv[2];
+    result_file_up = argv[3];
+    result_file_down = argv[4];
 
     // if((file = fopen("./lab_task.csv", "w+")) == NULL){
     //     err_quit("cann't open file");
@@ -532,9 +556,10 @@ main(int args, char * argv[]){
     // dispatch(lab_task_data_traffic_handler, NULL);
 
     /*fputs("src ip,dst ip,src port,dst port,protocol,tcp, tls \n", csv_file);
-    fflush(csv_file);
-    fnet_process_pcap(pcap_file, lab_task_share_handle, NULL);*/
-    fnet_process_pcap(pcap_file, lab_task_tls_tcp_handle, NULL);
-
+    fflush(csv_file);*/
+    //fnet_process_pcap(pcap_file, lab_task_share_handle, NULL);
+    fnet_process_pcap(pcap_file, lab_task_tls_tcp_handle2, NULL);
+    
+    
 
 }

@@ -4,7 +4,7 @@ CFLAGS = -O2 -I $(INCLDDIR)  -Wall -Wbad-function-cast -Wchar-subscripts -Wcomme
 
 
 OBJS = connect_manage.o dispatch.o error.o flow.o extractor.o \
-		utils.o libfnet.o nflog.o packets.o wrappthread.o tls.o
+		utils.o libfnet.o nflog.o packets.o wrappthread.o tls.o parse_log.o lablib.o
 
 LADIR = ./lib/joy
 
@@ -62,6 +62,10 @@ wrappthread.o:
 tls.o:
 	cc -c $(CFLAGS) tls.c
 
+parse_log.o:
+	cc -c $(CFLAGS) parse_log.c
+lablib.o:
+	cc -c $(CFLAGS) lablib.c
 	
 .PHONY: clean
 clean:

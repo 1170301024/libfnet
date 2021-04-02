@@ -1,6 +1,7 @@
 #include    <pthread.h>
 #include    <unistd.h>
 #include    <stdio.h>
+#include    <stdlib.h>
 #include    <fcntl.h>
 
 #include    "include/libfnet.h"
@@ -100,10 +101,13 @@ fnet_process_pcap(const char * pcap_file, feature_handler fhdl, unsigned char *f
     if((fxpid = fork()) == 0){
         // close the descriptor for reading
         close(fxd_pipe[0]);
+        
         flow_pipe_out = fdopen(fxd_pipe[1], "w"); 
         if(init_feature_extract_service() == 0){
             return feature_extract_from_pcap(pcap_file);
         }
+        printf("hello11\n");
+        sleep(1);
 
         return -1;
     }
