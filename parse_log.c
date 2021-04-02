@@ -4,6 +4,7 @@
 #include    <stdio.h>
 #include    "fnetlib.h"
 #include    "include/error.h"
+#include    "include/parse_log.h"
 
 
 
