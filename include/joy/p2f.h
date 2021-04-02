@@ -128,7 +128,7 @@ extern FILE *info;
  * lengths/times (actual value configurable on command line)
  */
 #define DEFAULT_NUM_PKT_LEN 50
-#define MAX_NUM_PKT_LEN 200
+#define MAX_NUM_PKT_LEN 1024
 #define MAX_IDP 1500
 #define MAX_TCP_RETRANS_BUFFER 10
 

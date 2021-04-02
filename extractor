@@ -1,0 +1,79 @@
+#!/bin/bash
+
+usage() {
+    echo "Usage:"
+    echo "extractor.sh [-f pcap file] [-d pcap directroy] [-o csv directory] "
+    echo "description:"
+    echo -e "\t-f pcap file\tProcess a single pcap file\n"
+    echo -e "\t-d pcap directory\tProcess all pcap files(file must contain the .pcap suffix) in this directory\n"
+    ehco -e "\t-o csv directory\tThe output directory of the csv file, If this option is not included,\n 
+                                 the output directory of the CSV file is the directory of the pcap file"
+
+}
+cur_dir=`pwd`
+pcap_files=()
+csvdirectory=
+
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM 
+while getopts "hf:d:o:" arg
+do  
+    case $arg in
+        h)
+            usage
+            ;;
+        f)
+            if [ ! -f "$OPTARG" ]; then
+                echo "file $OPTARG is not exists"
+                exit -1
+            fi
+            pcap_file += $OPTARG
+            ;;
+        d)
+            if [ ! -d "$OPTARG" ]; then
+                echo "directory $OPTARG is not exists"
+                exit -1
+            fi
+            file_in_dir=`ls $OPTARG`
+           # echo $file_in_dir
+            for file in $file_in_dir
+            do
+                abs_file_path="$cur_dir/$OPTARG/$file"
+                if [ ! -n "${csvdirectory}" ]; then
+                    csvdirectory="$cur_dir/$OPTARG"
+                    echo $csvdirectory
+                fi
+                if [ -f $abs_file_path ]; then
+                    if [ ${file##*.} == "pcap" ]; then
+                        pcap_files+=($abs_file_path)
+                    fi
+                    #echo $abs_file_path
+                fi
+            done
+            
+            ;;
+        o)  
+            csvdirectory=$OPTARG
+            #echo $csvdirectory
+            if [ ! -d "$csvdirectory" ]; then
+                mkdir $csvdirectory
+                
+            fi
+            csvdirectory="$cur_dir/$OPTARG"
+            #echo $csvdirectory
+            ;;
+        ?) 
+            echo "unknown argument"
+            usage
+            ;;
+        esac
+done
+for f in "${pcap_files[@]}";
+do
+    echo -e "[start processing]\t$f"
+    ./song/fishingnet/enjoy/fishing_net $f &
+    sleep 1
+    ./song/libfnet/lab_task $csvdirectory/${f##*/}.csv
+    echo -e "[completed]\t\t$f\n" 
+    
+        
+done

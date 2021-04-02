@@ -2,8 +2,9 @@
 INCLDDIR = include
 CFLAGS = -O2 -I $(INCLDDIR)  -Wall -Wbad-function-cast -Wchar-subscripts -Wcomment -Wdeprecated-declarations -Wdisabled-optimization -Wdiv-by-zero -Wendif-labels -Wformat -Wformat-extra-args -Wformat-security -Wformat-y2k -Wimplicit -Wimplicit-function-declaration -Wimplicit-int -Wimport -Winline -Winvalid-pch -Wmain -Wmissing-braces -Wmissing-format-attribute -Wmissing-noreturn -Wmultichar -Wnested-externs -Wnonnull -Wparentheses -Wpointer-arith -Wreturn-type -Wsequence-point -Wsign-compare -Wstrict-aliasing -Wstrict-prototypes -Wswitch -Wswitch-default -Wswitch-enum -Wsystem-headers -Wtrigraphs -Wunknown-pragmas -Wunused -Wunused-function -Wunused-label -Wunused-parameter -Wunused-value -Wunused-variable -Wwrite-strings -Wno-pointer-sign -Wextra -fPIC -fPIE -D_FORTIFY_SOURCE=2 -O -D_GNU_SOURCE  -Wunused-but-set-variable -Wcast-align -Wl,-z,noexecstack
 
+
 OBJS = connect_manage.o dispatch.o error.o flow.o extractor.o \
-		utils.o libfnet.o nflog.o packets.o wrappthread.o
+		utils.o libfnet.o nflog.o packets.o wrappthread.o tls.o parse_log.o lablib.o
 
 LADIR = ./lib/joy
 
@@ -39,6 +40,7 @@ libfnet.o:
 config.o:
 	cc -c $(CFLAGS) config.c
 
+
 flow.o:
 	cc -c $(CFLAGS) flow.c
 
@@ -56,12 +58,17 @@ packets.o:
 
 wrappthread.o:
 	cc -c $(CFLAGS) wrappthread.c
+
+tls.o:
+	cc -c $(CFLAGS) tls.c
+
+parse_log.o:
+	cc -c $(CFLAGS) parse_log.c
+lablib.o:
+	cc -c $(CFLAGS) lablib.c
 	
 .PHONY: clean
 clean:
 	rm *.o 
-<<<<<<< HEAD
-=======
 	rm *.lo
->>>>>>> develop
 	rm lab_task
