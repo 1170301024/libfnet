@@ -1,5 +1,6 @@
 #ifndef _PARSE_LOG_H_
 #define _PARSE_LOG_H_
+
 #define LOGFILE_MAX_LINE 256
 
 /*
