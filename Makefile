@@ -73,4 +73,5 @@ install:
 clean:
 	rm *.o 
 	rm *.lo
+	rm *.la
 	rm -r .libs
