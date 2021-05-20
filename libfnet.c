@@ -80,7 +80,6 @@ fnet_dispatch(int loop, feature_handler fhdl, unsigned char *fhdl_args){
     return dispatch(fhdl, fhdl_args);
 }
 
-
 int 
 fnet_process_pcap(const char * pcap_file, feature_handler fhdl, unsigned char *fhdl_argv){
 
@@ -101,15 +100,14 @@ fnet_process_pcap(const char * pcap_file, feature_handler fhdl, unsigned char *f
     if((fxpid = fork()) == 0){
         // close the descriptor for reading
         close(fxd_pipe[0]);
-        
         flow_pipe_out = fdopen(fxd_pipe[1], "w"); 
         if(init_feature_extract_service() == 0){
-            return feature_extract_from_pcap(pcap_file);
+            feature_extract_from_pcap(pcap_file);
+            exit(0);
         }
-        printf("hello11\n");
         sleep(1);
 
-        return -1;
+        exit(-1);
     }
     // sleep 1s for waiting feature extraction service to finish initialization
     sleep(1); 
@@ -117,6 +115,7 @@ fnet_process_pcap(const char * pcap_file, feature_handler fhdl, unsigned char *f
     close(fxd_pipe[1]);
     flow_pipe_in = fdopen(fxd_pipe[0], "r");
     flow_distribute(fhdl, fhdl_argv);
+   
     return 0;
 }
 

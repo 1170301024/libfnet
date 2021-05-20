@@ -97,14 +97,15 @@ more:
 
         }
         memcpy(sub_ptrn_str, item_str+pmatch[3].rm_so, pmatch[3].rm_eo-pmatch[3].rm_so); 
-        sub_ptrn_str[pmatch[1].rm_eo-pmatch[1].rm_so] = '\0';
+        sub_ptrn_str[pmatch[3].rm_eo-pmatch[3].rm_so] = '\0';
+        
         if(fnet_atoi(&(srlt->items[item_count].ipt), sub_ptrn_str) == -1){
             err_quit("fnet_atoi error");
             return NULL;
         }
 
         memcpy(sub_ptrn_str, item_str+pmatch[4].rm_so, pmatch[4].rm_eo-pmatch[4].rm_so); 
-        sub_ptrn_str[pmatch[1].rm_eo-pmatch[1].rm_so] = '\0';
+        sub_ptrn_str[pmatch[4].rm_eo-pmatch[4].rm_so] = '\0';
         if(fnet_atoi(&(srlt->items[item_count].tp), sub_ptrn_str) == -1){
             err_quit("fnet_atoi error");
             return NULL;

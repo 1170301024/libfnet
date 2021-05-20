@@ -2,4 +2,4 @@ pcaps/*
 csv_result/*
 *.o 
 *.lo
-lab_task
+.libs/

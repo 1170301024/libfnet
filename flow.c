@@ -204,16 +204,16 @@ get_flow_record(struct flow_record *record){
     if(len <= 1){
         return -1;
     }
-    //puts(json_str);
+    // puts(json_str);
 
     json_str[len-1] = '\0';
 
     if(strcmp(json_str, EXTRACTOR_PCAP_FIN_STR) == 0){
-        exit(0);
+        return -1;
     }
     init_flow_record(record);
     if(json_string2flow_record(record, json_str) < 0){
-        return -1;
+        err_quit("error for parse json string");
     }
     return 0;
 }
@@ -225,8 +225,8 @@ flow_distribute(feature_handler handler, const unsigned char * fthd_argv){
     while(1){
         
         if(get_flow_record(&record) < 0){
-            //err_msg("next_record error");
-            continue;
+            return;
+
         }
         struct feature_set *fts = (struct feature_set*)malloc(sizeof (struct feature_set));
         if(fts == NULL){
